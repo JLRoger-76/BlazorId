@@ -1,0 +1,75 @@
+﻿@page "/claims"
+@using BlazorId.Shared;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.EntityFrameworkCore;
+@using System.Security.Claims;
+
+@inject HttpClient client
+@inject AuthenticationStateProvider authenticationStateProvider
+
+@attribute [Authorize]
+<h3>Current User Information</h3>
+
+@if (userName != null)
+{
+    <p>User Name: @firstNameClaim</p>
+    <input class="form-control" type="text"
+           placeholder=" New FirstName"
+           @bind="newfirstNameClaim" />
+    <br />
+    <br />
+    <!-- Button to save the user -->
+    <button class="btn btn-primary"
+    @onclick="SaveUser">
+        Save
+    </button>   
+}
+else
+{
+    <p>No user is currently authenticated.</p>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private List<ClaimDto> claims;
+    private string userName;
+    private string firstNameClaim;
+    private string newfirstNameClaim;
+    // To hold any possible errors
+    string strError = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Extract the name of then current logged in user Claim
+        userName = (await authenticationStateTask).User.Identity.Name;
+        // Get claims of the current user
+        claims = await client.GetFromJsonAsync<List<ClaimDto>>("api/claim/"+ userName);
+        if (claims.Count != 0) 
+        {
+            firstNameClaim = claims.FirstOrDefault(t => t.Type == "FirstName")?.Value!;  
+        }
+    }
+
+    async Task SaveUser()
+    {
+        try
+        {
+            if (claims.Count == 0)
+            {
+                await client.PostAsync($"api/claim?userName={userName}&claimType=FirstName&claimValue={newfirstNameClaim}", null);
+            }
+            else
+            {
+                await client.PutAsync($"api/claim?userName={userName}&claimType=FirstName&claimCurrentValue={firstNameClaim}&claimValue={newfirstNameClaim}", null);
+            }
+        }
+        catch (Exception ex)
+        {
+            strError = ex.GetBaseException().Message;
+        }
+    }
+}
+
+

@@ -1,0 +1,175 @@
+﻿@page "/users"
+@using BlazorId.Shared;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Identity;
+@using System.Security.Claims;
+@inject HttpClient client
+
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@attribute [Authorize(Roles = "Administrator")]
+<h3>User List</h3>
+
+@if (users != null && users.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Username</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                     <td>@user.Id.Substring(0, 5) ...</td>
+                    <td>@user.UserName</td>
+                    <td>
+                        <!-- Edit the current user -->
+                        <button class="btn btn-primary"
+                        @onclick="(() => EditUser(user))"> Edit
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ShowPopup)
+    {
+        <!-- This is the popup to create or edit a user -->
+        <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Edit</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                        @onclick="ClosePopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the current user -->
+                    <div class="modal-body">                    
+                        <p>@objUser.Id</p>                    
+                        <p>@objUser.UserName</p>                      
+                        <input class="form-control" type="text"
+                               placeholder="Role"
+                        @bind="@NewUserRole" />
+                        <select class="form-control" @bind="@CurrentUserRole">
+                            @foreach (var role in roles)
+                             {<option value="@role.Name"> @role.Name </option>}
+                        </select>
+                        
+                        <br /><br />
+                        <!-- Button to save the user -->
+                        <button class="btn btn-primary"
+                             @onclick="(() => SaveUserRole(objUser.Id))">
+                             Save Role
+                        </button>
+                        <!-- Button to delete the forecast -->
+                        <button class="btn btn-danger"
+                            @onclick="(() => DeleteUser(objUser.Id))">            
+                            Delete User
+                        </button>                     
+                        <br />
+                        <span style="color:red">@strError</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <p>No users found.</p>
+}
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    // To hold any possible errors
+    string strError = "";
+    // To enable showing the Popup
+    bool ShowPopup = false;
+    private List<ApplicationUser> users;
+    private ApplicationUser objUser;
+    private List<IdentityRole> roles;
+    private string CurrentUserRole { get; set; } = "Users";
+    string NewUserRole { get; set; } = "";
+    private ClaimsPrincipal CurrentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Call your API to get the list of users
+        // Get the current logged in user
+        CurrentUser = (await authenticationStateTask).User;
+        var username = CurrentUser.FindFirst(u => u.Type=="FirstName")?.Value;
+        
+        users = await client.GetFromJsonAsync<List<ApplicationUser>>("api/users");
+    }
+
+    private async Task EditUser(ApplicationUser user)
+    {
+        //get the user
+        objUser = await client.GetFromJsonAsync<ApplicationUser>("api/users/" + user.Id);
+        // get roles
+        roles = await client.GetFromJsonAsync<List<IdentityRole>>("api/roles");    
+        // gt userRole
+        var userRoles = await client.GetFromJsonAsync<List<string>>($"api/UserRoles?userId={user.Id}");
+        if (userRoles.Count > 0) { CurrentUserRole = userRoles[0]; }
+        // Open the Popup
+        ShowPopup = true;
+    }
+
+    private async Task SaveUserRole(string userId)
+    {
+        try
+        {
+            // Handle Roles
+            var userRoles = await client.GetFromJsonAsync<List<string>>($"api/UserRoles?userId={userId}");
+            // Remove roles of user    
+            foreach (String userRole in userRoles)
+            {  
+                await client.DeleteAsync($"api/UserRoles?userId={userId}&roleName={userRole}");              
+            }
+            // Add selected role
+            if (NewUserRole != "")
+            {
+                await client.PostAsJsonAsync("api/roles", new IdentityRole(NewUserRole));
+                await client.PostAsync($"api/UserRoles?userId={userId}&roleName={NewUserRole}", null);
+            }
+            else
+            {
+                await client.PostAsync($"api/UserRoles?userId={userId}&roleName={CurrentUserRole}", null);
+            }
+        }
+        catch (Exception ex)
+        {
+            strError = ex.GetBaseException().Message;
+        }
+    }
+
+    private async Task DeleteUser(string userId)
+    {
+        // Close the Popup
+        ShowPopup = false;
+        try
+        {
+            // Delete the user
+            await client.DeleteAsync("api/users/" + userId);
+         }
+        catch (Exception ex)
+        {
+            strError = ex.GetBaseException().Message;
+        }
+    }
+
+    void ClosePopup()
+    {
+        // Close the Popup
+        ShowPopup = false;
+    }
+}
+
