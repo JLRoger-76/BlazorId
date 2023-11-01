@@ -6,7 +6,7 @@
 @inject HttpClient client
 
 @inject AuthenticationStateProvider AuthenticationStateProvider;
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [Authorize]
 <h3>User List</h3>
 
 @if (users != null && users.Any())
@@ -59,12 +59,26 @@
                             @foreach (var role in roles)
                              {<option value="@role.Name"> @role.Name </option>}
                         </select>
-                        
+                        <input class="form-control" type="text"
+                               placeholder="FirstName"
+                        @bind="@objUser.FirstName" />
+                        <input class="form-control" type="text"
+                               placeholder="FirstName"
+                        @bind="@objUser.LastName" />
+                        <input class="form-control" type="text"
+                               placeholder="Street"
+                        @bind="@objUser.Street" />
+                        <input class="form-control" type="text"
+                               placeholder="ZipCode"
+                        @bind="@objUser.ZipCode" />
+                        <input class="form-control" type="text"
+                               placeholder="City"
+                        @bind="@objUser.City" />
                         <br /><br />
                         <!-- Button to save the user -->
                         <button class="btn btn-primary"
                              @onclick="(() => SaveUserRole(objUser.Id))">
-                             Save Role
+                             Save User
                         </button>
                         <!-- Button to delete the forecast -->
                         <button class="btn btn-danger"
@@ -106,7 +120,7 @@ else
         // Get the current logged in user
         CurrentUser = (await authenticationStateTask).User;
         var username = CurrentUser.FindFirst(u => u.Type=="FirstName")?.Value;
-        
+
         users = await client.GetFromJsonAsync<List<ApplicationUser>>("api/users");
     }
 
@@ -144,6 +158,8 @@ else
             {
                 await client.PostAsync($"api/UserRoles?userId={userId}&roleName={CurrentUserRole}", null);
             }
+            //Update user
+            await client.PutAsJsonAsync("api/users/"+objUser.Id , objUser);
         }
         catch (Exception ex)
         {

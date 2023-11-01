@@ -60,6 +60,11 @@ public class UserController : ControllerBase
         }
 
         existingUser.UserName = user.UserName;
+        existingUser.FirstName = user.FirstName;
+        existingUser.LastName = user.LastName;
+        existingUser.Street = user.Street;
+        existingUser.City = user.City;
+        existingUser.ZipCode = user.ZipCode;
         // Update other user properties as needed
 
         var result = await _userManager.UpdateAsync(existingUser);
