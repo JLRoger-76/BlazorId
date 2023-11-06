@@ -1,0 +1,64 @@
+﻿@page "/trainings"
+@using BlazorId.Shared;
+<h3>Trainings</h3>
+@if (categories == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    @if (categories[0].ParentId > 0)
+    {
+        <button class="btn btn-success"
+        @onclick="(() => ShowParent(categories[0].ParentId))">
+            Back
+        </button>
+    }
+    <div class="container-fluid">
+        <ul class="list-group">
+            @foreach (var category in categories)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @category.Name
+                    @if (category.ExistChildren)
+                    {
+                        <button class="btn btn-success"
+                        @onclick="(() => ShowChildren(category.Id))">
+                            Sub-categories
+                        </button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    [Inject]
+    private IHttpAnonymousClientFactory client { get; set; }
+    private List<Category>? categories;
+    private int IdParent = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await client.HttpClient.GetFromJsonAsync<List<Category>>("api/Categories/Parent/" + IdParent);
+        foreach (Category cat in categories!)
+        {
+            var children = await client.HttpClient.GetFromJsonAsync<List<Category>>("api/Categories/Parent/" + cat.Id);
+            cat.ExistChildren = (children!.Count() != 0);
+        }
+    }
+
+    async Task ShowParent(int id)
+    {
+        var cat = await client.HttpClient.GetFromJsonAsync<Category>("api/Categories/" + id);
+        IdParent = cat!.ParentId;
+        await OnInitializedAsync();
+    }
+
+    async Task ShowChildren(int id)
+    {
+        IdParent = id;
+        await OnInitializedAsync();
+    }
+}
