@@ -14,5 +14,7 @@ namespace BlazorId.Shared
 
         [NotMapped]
         public bool ExistChildren { get; set; }
+        [NotMapped]
+        public bool IsLinked {  get; set; }
     }
 }

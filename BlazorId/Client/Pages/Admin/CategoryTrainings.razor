@@ -1,0 +1,184 @@
+﻿@page "/categorytrainings"
+@using BlazorId.Shared;
+@inject HttpClient client;
+
+<h3>Training</h3>
+@if (trainings == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Price (euro)</th>
+                <th>
+                    Action
+                    <button class="btn btn-primary"
+                    @onclick="(() => EditTraining(objTraining))">
+                        Add
+                    </button>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var training in trainings)
+            {
+                <tr>
+                    <td>@training.Id</td>
+                    <td>@training.Name</td>
+                    <td>@training.Price</td>
+                    <td>
+                        <!-- Edit the training -->
+                        <button class="btn btn-primary"
+                        @onclick="(() => EditTraining(training))">
+                            Edit
+                        </button>
+                        <button class="btn btn-danger"
+                        @onclick="(() => DeleteTraining(training))">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ShowPopup)
+    {
+        <!-- This is the popup to create or edit a user -->
+        <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Edit</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                        @onclick="ClosePopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the training -->
+                    <div class="modal-body">
+                        <input class="form-control" type="text"
+                               placeholder="Name"
+                        @bind="@objTraining.Name" />
+                        <input class="form-control" type="text"
+                               placeholder="Price €"
+                        @bind="@objTraining.Price" />
+                        <input class="form-control" type="text"
+                               placeholder="Detail"
+                        @bind="@objTraining.Detail" />
+                        <div class="list-group">
+                            @foreach (var category in categories)
+                            {
+                                <label class="list-group-item">
+                                    <input class="form-check-input me-1" type="checkbox" @bind="category.IsLinked">
+                                    @category.Name
+                                </label>
+                            }
+                        </div>
+                        <!-- Button to save the training -->
+                        <button class="btn btn-primary"
+                        @onclick="(() => Save(objTraining.Id,objTraining))">
+                            Save Training
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<Training>? trainings;
+    private Training objTraining = new Training();
+
+    private List<Category>? categories;
+
+    private List<CategoryTraining>? categoryTrainings;
+    private CategoryTraining objCategoryTraining = new CategoryTraining();
+
+    // To hold any possible errors
+    string strError = "";
+    // To enable showing the Popup
+    bool ShowPopup = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        trainings = await client.GetFromJsonAsync<List<Training>>("api/Trainings");
+        categories = await client.GetFromJsonAsync<List<Category>>("api/Categories");
+
+    }
+
+    private async Task EditTraining(Training training)
+    {
+        foreach (Category category in categories)
+        {
+            //init current category
+            category.IsLinked = false;
+            categoryTrainings = await client.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + category.Id);
+            foreach (var categoryTraining in categoryTrainings)
+            {
+                //if exist category associated to training
+                if (categoryTraining.TrainingId == training.Id)
+                    //add checked current category
+                    category.IsLinked = true;
+            }
+        }
+
+        // Open the Popup
+        objTraining = training;
+        ShowPopup = true;
+    }
+
+    async Task Save(int id, Training training)
+    {
+        foreach (Category category in categories)
+        {
+            categoryTrainings = await client.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + category.Id);
+            bool isLinked = false;
+            foreach (var categoryTraining in categoryTrainings)
+            {   //if exist category associated to training but unchecked
+                if (categoryTraining.TrainingId == training.Id)
+                {
+                    isLinked = true;
+                    if (category.IsLinked == false)
+                    {   //delete association
+                        await client.DeleteAsync($"api/CategoryTrainings/{categoryTraining.Id}");
+                    }
+                }
+            }
+            if (isLinked == false && category.IsLinked == true)
+            {   //if is a new category checked add association
+                objCategoryTraining.CategoryId = category.Id;
+                objCategoryTraining.TrainingId = training.Id;
+                await client.PostAsJsonAsync("api/CategoryTrainings", objCategoryTraining);
+            }
+        }
+        if (id == 0)
+        {   //add training
+            await client.PostAsJsonAsync("api/Trainings", training);
+        }
+        else
+        {   //update training
+            await client.PutAsJsonAsync("api/Trainings/" + id, training);
+        }
+        ClosePopup();
+        await OnInitializedAsync();
+    }
+
+    async Task DeleteTraining(Training training)
+    {
+        await client.DeleteAsync($"api/Trainings/{training.Id}");
+        await OnInitializedAsync();
+    }
+
+    void ClosePopup()
+    {
+        // Close the Popup
+        ShowPopup = false;
+    }
+}

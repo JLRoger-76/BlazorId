@@ -15,6 +15,9 @@ namespace BlazorId.Server.Data
         }
         //added
         public DbSet<Category> Categories { get; set; }
+        public DbSet<Training> Trainings { get; set; }
+        public DbSet<CategoryTraining> CategoryTrainings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

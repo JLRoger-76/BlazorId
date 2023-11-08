@@ -1,5 +1,6 @@
 ﻿@page "/trainings"
 @using BlazorId.Shared;
+@inject NavigationManager NavigationManager
 <h3>Trainings</h3>
 @if (categories == null)
 {
@@ -14,45 +15,82 @@ else
             Back
         </button>
     }
-    <div class="container-fluid">
-        <ul class="list-group">
-            @foreach (var category in categories)
+    @if (showTrainings == false)
+    {
+        
+        <div class="container-fluid">
+            <ul class="list-group">
+                @foreach (var category in categories)
+                {
+                    <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                        @category.Name
+                        @if (category.ExistChildren)
+                        {
+                            <button class="btn btn-success"
+                            @onclick="(() => ShowChildren(category.Id))">
+                                Sub-categories
+                            </button>
+                        }
+                        @if (category.IsLinked)
+                        {
+                            <button class="btn btn-success"
+                            @onclick="(() => ShowTrainings(category.Id))">
+                                Trainings
+                            </button>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var ct in categoryTrainings)
             {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    @category.Name
-                    @if (category.ExistChildren)
-                    {
-                        <button class="btn btn-success"
-                        @onclick="(() => ShowChildren(category.Id))">
-                            Sub-categories
-                        </button>
-                    }
-                </li>
+                <div class="col-sm-12 col-md-6 col-lg-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p>@ct.Training!.Name</p>
+                            <p>@ct.Training.Price euros</p>
+                            <p>@ct.Training.Detail</p>
+                        </div>
+                    </div>
+                </div>
             }
-        </ul>
-    </div>
-}
+        </div>
+    }
 
+}
 @code {
     [Inject]
     private IHttpAnonymousClientFactory client { get; set; }
     private List<Category>? categories;
     private int IdParent = 0;
+    private List<CategoryTraining>? categoryTrainings;
+   // private List<Training> trainings;
+    private bool showTrainings;
 
     protected override async Task OnInitializedAsync()
     {
         categories = await client.HttpClient.GetFromJsonAsync<List<Category>>("api/Categories/Parent/" + IdParent);
-        foreach (Category cat in categories!)
+        foreach (Category category in categories!)
         {
-            var children = await client.HttpClient.GetFromJsonAsync<List<Category>>("api/Categories/Parent/" + cat.Id);
-            cat.ExistChildren = (children!.Count() != 0);
+            // exist sub-category
+            var children = await client.HttpClient.GetFromJsonAsync<List<Category>>("api/Categories/Parent/" + category.Id);
+            category.ExistChildren = (children!.Count() != 0);
+
+            // exist links category - training
+            categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + category.Id);
+            category.IsLinked = (categoryTrainings!.Count != 0);
         }
     }
 
     async Task ShowParent(int id)
     {
-        var cat = await client.HttpClient.GetFromJsonAsync<Category>("api/Categories/" + id);
-        IdParent = cat!.ParentId;
+        var category = await client.HttpClient.GetFromJsonAsync<Category>("api/Categories/" + id);
+        IdParent = category!.ParentId;
+        showTrainings = false;
         await OnInitializedAsync();
     }
 
@@ -60,5 +98,12 @@ else
     {
         IdParent = id;
         await OnInitializedAsync();
+    }
+
+    async Task ShowTrainings(int categoryid)
+    {
+        showTrainings = true;
+        // links from category.id
+        categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + categoryid);
     }
 }
