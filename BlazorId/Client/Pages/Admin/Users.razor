@@ -80,7 +80,7 @@
                              @onclick="(() => SaveUserRole(objUser.Id))">
                              Save User
                         </button>
-                        <!-- Button to delete the forecast -->
+                        <!-- Button to delete the user -->
                         <button class="btn btn-danger"
                             @onclick="(() => DeleteUser(objUser.Id))">            
                             Delete User
@@ -131,7 +131,7 @@ else
         // get roles
         roles = await client.GetFromJsonAsync<List<IdentityRole>>("api/roles");    
         // gt userRole
-        var userRoles = await client.GetFromJsonAsync<List<string>>($"api/UserRoles?userId={user.Id}");
+        var userRoles = await client.GetFromJsonAsync<List<string>>($"api/UserRole?userId={user.Id}");
         if (userRoles.Count > 0) { CurrentUserRole = userRoles[0]; }
         // Open the Popup
         ShowPopup = true;
@@ -142,21 +142,21 @@ else
         try
         {
             // Handle Roles
-            var userRoles = await client.GetFromJsonAsync<List<string>>($"api/UserRoles?userId={userId}");
+            var userRoles = await client.GetFromJsonAsync<List<string>>($"api/UserRole?userId={userId}");
             // Remove roles of user    
             foreach (String userRole in userRoles)
             {  
-                await client.DeleteAsync($"api/UserRoles?userId={userId}&roleName={userRole}");              
+                await client.DeleteAsync($"api/UserRole?userId={userId}&roleName={userRole}");              
             }
             // Add selected role
             if (NewUserRole != "")
             {
                 await client.PostAsJsonAsync("api/roles", new IdentityRole(NewUserRole));
-                await client.PostAsync($"api/UserRoles?userId={userId}&roleName={NewUserRole}", null);
+                await client.PostAsync($"api/UserRole?userId={userId}&roleName={NewUserRole}", null);
             }
             else
             {
-                await client.PostAsync($"api/UserRoles?userId={userId}&roleName={CurrentUserRole}", null);
+                await client.PostAsync($"api/UserRole?userId={userId}&roleName={CurrentUserRole}", null);
             }
             //Update user
             await client.PutAsJsonAsync("api/users/"+objUser.Id , objUser);

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlazorId.Server.Controllers
 {
-    [Route("api/userroles")]
+    [Route("api/[controller]")]
     [ApiController]
     public class UserRoleController : ControllerBase
     {
@@ -28,6 +28,13 @@ namespace BlazorId.Server.Controllers
 
             var userRoles = await _userManager.GetRolesAsync(user);
             return Ok(userRoles);
+        }
+
+        [HttpGet("Role/{id}")]
+        public async Task<ActionResult<IEnumerable<ApplicationUser>>> GetUsersInRole(string id)
+        {
+            var users = await _userManager.GetUsersInRoleAsync(id);
+            return Ok(users);
         }
 
         [HttpPost]

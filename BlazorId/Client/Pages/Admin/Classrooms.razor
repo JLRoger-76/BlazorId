@@ -1,0 +1,142 @@
+﻿@page "/classrooms"
+@using BlazorId.Shared;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Identity;
+@inject HttpClient client
+
+@attribute [Authorize]
+<h3>Classroom List</h3>
+@if (users != null && users.Any())
+{
+    <table class="table table-light table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>
+                    Action
+                    <button class="btn btn-primary"
+                    @onclick="(() => Edit(objClassroom))">
+                        Add
+                    </button>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var classroom in classrooms)
+            {
+                <tr>
+                    <td>@classroom.Id</td>
+                    <td>@classroom.Name</td>
+                    <td>
+                        <button class="btn btn-primary"
+                        @onclick="(() => Edit(classroom))">
+                            Edit
+                        </button>
+                        <button class="btn btn-danger"
+                        @onclick="(() => Delete(classroom))">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ShowPopup)
+    {
+        <!-- This is the popup to create or edit a user -->
+        <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Edit</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                        @onclick="ClosePopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the current user -->
+                    <div class="modal-body">
+                        <input class="form-control" type="text"
+                               placeholder="Name"
+                        @bind="@objClassroom.Name" />
+                        <InputSelect class="form-select " @bind-Value="@objClassroom.UserId">
+                            <option selected>Select a Company</option>
+                            @foreach (var user in users)
+                            {
+                                <option value="@user.Id">@user.FirstName @user.ZipCode @user.City</option>
+                            }
+                        </InputSelect>
+                        <br /><br />
+                        <!-- Button to save the classroom -->
+                        <button class="btn btn-primary"
+                        @onclick="(() => Save(objClassroom))">
+                            Save
+                        </button>
+                        <!-- Button to delete the classroom -->
+                        <button class="btn btn-danger"
+                        @onclick="(() => Delete(objClassroom))">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+}
+else
+{
+    <p>No users found.</p>
+}
+
+
+@code {
+    private List<Classroom> classrooms;
+    private Classroom objClassroom;
+    private List<ApplicationUser> users;
+    private string userRole = "Company";
+    bool ShowPopup = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Call your API to get the list of enterprises
+        users = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/" + userRole);
+        classrooms = await client.GetFromJsonAsync<List<Classroom>>("api/Classrooms");
+        objClassroom = new Classroom();
+    }
+
+    private async Task Edit(Classroom classroom)
+    {
+        objClassroom = classroom;
+        ShowPopup = true;
+    }
+
+    private async Task Save(Classroom classroom)
+    {
+        if (classroom.Id == 0)
+        {   //add classroom
+            await client.PostAsJsonAsync("api/Classrooms", classroom);
+        }
+        else
+        {   //update classroom
+            await client.PutAsJsonAsync("api/Classrooms/" + classroom.Id, classroom);
+        }
+        
+        ShowPopup = false;
+        await OnInitializedAsync();
+    }
+
+    async Task Delete(Classroom classroom)
+    {
+        await client.DeleteAsync($"api/Classrooms/{classroom.Id}");
+        await OnInitializedAsync();
+    }
+
+    void ClosePopup()
+    {
+        ShowPopup = false;
+    }
+}
+
