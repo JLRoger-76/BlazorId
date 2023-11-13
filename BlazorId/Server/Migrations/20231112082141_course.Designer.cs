@@ -4,6 +4,7 @@ using BlazorId.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorId.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231112082141_course")]
+    partial class course
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -159,11 +162,9 @@ namespace BlazorId.Server.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Classrooms");
                 });
@@ -193,10 +194,6 @@ namespace BlazorId.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClassroomId");
-
-                    b.HasIndex("TrainingId");
-
                     b.ToTable("Courses");
                 });
 
@@ -210,9 +207,6 @@ namespace BlazorId.Server.Migrations
 
                     b.Property<string>("Detail")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -518,36 +512,6 @@ namespace BlazorId.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
-
-                    b.Navigation("Training");
-                });
-
-            modelBuilder.Entity("BlazorId.Shared.Classroom", b =>
-                {
-                    b.HasOne("BlazorId.Shared.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BlazorId.Shared.Course", b =>
-                {
-                    b.HasOne("BlazorId.Shared.Classroom", "Classroom")
-                        .WithMany()
-                        .HasForeignKey("ClassroomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BlazorId.Shared.Training", "Training")
-                        .WithMany()
-                        .HasForeignKey("TrainingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Classroom");
 
                     b.Navigation("Training");
                 });

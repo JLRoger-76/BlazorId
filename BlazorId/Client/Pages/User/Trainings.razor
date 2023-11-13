@@ -52,24 +52,28 @@ else
                     <div class="card bg-light">
                         <div class="card-body">
                             <p>@ct.Training!.Name</p>
+                            <p>@ct.Training.Duration days</p>
                             <p>@ct.Training.Price euros</p>
-                            <p>@ct.Training.Detail</p>
+                            <button class="btn btn-success"
+                            @onclick="(() => ShowDetail(ct.Training.Id))">
+                                Details
+                            </button>                          
                         </div>
                     </div>
                 </div>
             }
         </div>
     }
-
 }
+
 @code {
     [Inject]
     private IHttpAnonymousClientFactory client { get; set; }
     private List<Category>? categories;
     private int IdParent = 0;
     private List<CategoryTraining>? categoryTrainings;
-   // private List<Training> trainings;
     private bool showTrainings;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,4 +110,10 @@ else
         // links from category.id
         categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + categoryid);
     }
+   
+
+    private  void ShowDetail(int id)
+    {
+        NavigationManager.NavigateTo("trainingDetail/"+id);
+    } 
 }

@@ -1,0 +1,240 @@
+﻿@page "/courses"
+@using BlazorId.Shared;
+@using Microsoft.AspNetCore.Authorization;
+@inject HttpClient client;
+
+@attribute [Authorize]
+<h3>Courses</h3>
+@if (courses == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <table class="table table-light table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Training</th>
+                <th>Classroom</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Price (euro)</th>
+                <th>
+                    <button class="btn btn-primary"
+                    @onclick="(() => Edit(objCourse))">
+                        Add
+                    </button>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (ShowForm)
+            {
+                <tr>
+                    <td>
+                        @objCourse.Id
+                    </td>
+                    <td>
+                        @objCourse.TrainingId
+                        <button class="btn btn-primary"
+                        @onclick="(() => EditTraining())">
+                            Edit
+                        </button>
+                    </td>
+                    <td>
+                        @objCourse.ClassroomId
+                        <button class="btn btn-primary"
+                        @onclick="(() => EditClassroom())">
+                            Edit
+                        </button>
+                    </td>
+                    <td>
+                        <div class="form-control">
+                            <InputDate @bind-Value="objCourse.StartDate" />
+                        </div>
+                    </td>
+                    <td>
+                        <div class="form-control">
+                            @objCourse.EndDate.ToShortDateString()
+                        </div>
+                    </td>
+                    <td>
+                        <input class="form-control" type="number"
+                               placeholder="Price €" style="width:100px"
+                        @bind="@objCourse.Price" />
+                    </td>
+                    <td>
+                        <button class="btn btn-primary"
+                        @onclick="(() => Save(objCourse.Id,objCourse))">
+                            Save
+                        </button>
+                    </td>
+                </tr>
+            }
+            @foreach (var course in courses)
+            {
+                <tr>
+                    <td>@course.Id</td>
+                    <td>@course.Training.Name </td>
+                    <td>@course.Classroom.Name</td>
+                    <td>@course.StartDate.ToShortDateString()</td>
+                    <td>@course.EndDate.ToShortDateString()</td>
+                    <td>@course.Price</td>
+                    <td>
+                        <button class="btn btn-primary"
+                        @onclick="(() => Edit(course))">
+                            Edit
+                        </button>
+                        <button class="btn btn-danger"
+                        @onclick="(() => Delete(course))">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ShowPopup != 0)
+    {
+        <!-- This is the popup to create or edit -->
+        <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Edit</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                        @onclick="ClosePopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the training -->
+                    <div class="modal-body">
+                        @if (ShowPopup == 1)
+                        {
+                            <input class="form-control" type="text"
+                                   placeholder="Name"
+                            @bind="@objCourse.TrainingId" />
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Id</th>
+                                        <th>Name</th>
+                                        <th>Price (euro)</th>
+                                        <th>Duration (days)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var training in trainings)
+                                    {
+                                        <tr>
+                                            <td>@training.Id</td>
+                                            <td>@training.Name</td>
+                                            <td>@training.Price</td>
+                                            <td>@training.Duration</td>
+                                            <td>
+                                                <!-- Edit the training -->
+                                                <button class="btn btn-primary"
+                                                @onclick="(() => SelectTraining(training))">
+                                                    Select
+                                                </button>                   
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        @if (ShowPopup == 2)
+                        {
+                            <input class="form-control" type="text"
+                                   placeholder="Name"
+                            @bind="@objCourse.ClassroomId" />
+                            <InputSelect class="form-select " @bind-Value="@objCourse.ClassroomId">
+                                <option selected>Select a Training</option>
+                                @foreach (var classroom in classrooms)
+                                {
+                                    <option value="@classroom.Id">@classroom.Name</option>
+                                }
+                            </InputSelect>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<Course>? courses;
+    private Course objCourse;
+    private List<Training>? trainings;
+    private Training objTraining = new Training();
+    private List<Classroom>? classrooms;
+    // To hold any possible errors
+    string strError = "";
+    // To enable showing the form
+    bool ShowForm = false;
+    // To enable showing the Popup
+    int ShowPopup = 0;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        courses = await client.GetFromJsonAsync<List<Course>>("api/Courses");
+        trainings = await client.GetFromJsonAsync<List<Training>>("api/Trainings");
+        classrooms = await client.GetFromJsonAsync<List<Classroom>>("api/Classrooms");
+        objCourse = new Course();
+    }
+
+    private void Edit(Course course)
+    {
+        objCourse = course;
+        ShowForm = true;
+    }
+
+    private void EditTraining()
+    {
+        // Open the Popup
+        ShowPopup = 1;
+    }
+
+    private void EditClassroom()
+    {
+        // Open the Popup
+        ShowPopup = 2;
+    }
+
+    private void SelectTraining(Training training)
+    {
+        objCourse.TrainingId = training.Id;
+        objCourse.Price = training.Price;
+        objCourse.EndDate = objCourse.StartDate.AddDays(training.Duration);
+        ClosePopup();
+    }
+
+    private async Task Save(int id, Course course)
+    {
+        ShowForm = false;
+        if (course.Id == 0)
+        {
+            await client.PostAsJsonAsync("api/Courses", course);
+        }
+        else
+        {
+            await client.PutAsJsonAsync("api/Courses/" + course.Id, course);
+        }
+        await OnInitializedAsync();
+    }
+
+    private async Task Delete(Course course)
+    {
+        await client.DeleteAsync($"api/Courses/{course.Id}");
+        await OnInitializedAsync();
+    }
+    private void ClosePopup()
+    {
+        ShowPopup = 0;
+    }
+}

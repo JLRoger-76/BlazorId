@@ -11,5 +11,7 @@ namespace BlazorId.Shared
         public string Name { get; set; } 
         //userRole=Center
         public string UserId { get; set; } 
+        public ApplicationUser? User {  get; set; }
+        
     }
 }

@@ -15,6 +15,7 @@ else
                 <th>Id</th>
                 <th>Name</th>
                 <th>Price (euro)</th>
+                <th>Duration (days)</th>
                 <th>
                     Action
                     <button class="btn btn-primary"
@@ -31,6 +32,7 @@ else
                     <td>@training.Id</td>
                     <td>@training.Name</td>
                     <td>@training.Price</td>
+                    <td>@training.Duration</td>
                     <td>
                         <!-- Edit the training -->
                         <button class="btn btn-primary"
@@ -68,6 +70,9 @@ else
                         <input class="form-control" type="text"
                                placeholder="Price €"
                         @bind="@objTraining.Price" />
+                        <input class="form-control" type="number"
+                               placeholder="Duration"
+                        @bind="@objTraining.Duration" />
                         <input class="form-control" type="text"
                                placeholder="Detail"
                         @bind="@objTraining.Detail" />
