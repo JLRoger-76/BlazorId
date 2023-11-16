@@ -19,5 +19,6 @@ namespace BlazorId.Server.Data
         public DbSet<CategoryTraining> CategoryTrainings { get; set; }
         public DbSet<Classroom> Classrooms { get; set; }
         public DbSet<Course> Courses { get; set; }
+        public DbSet<UserCourse> UserCourses { get; set; }
     }
 }

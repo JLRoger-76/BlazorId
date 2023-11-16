@@ -1,6 +1,7 @@
 ﻿@page "/trainings"
 @using BlazorId.Shared;
 @inject NavigationManager NavigationManager
+
 <h3>Trainings</h3>
 @if (categories == null)
 {
@@ -17,7 +18,6 @@ else
     }
     @if (showTrainings == false)
     {
-        
         <div class="container-fluid">
             <ul class="list-group">
                 @foreach (var category in categories)
@@ -55,12 +55,38 @@ else
                             <p>@ct.Training.Duration days</p>
                             <p>@ct.Training.Price euros</p>
                             <button class="btn btn-success"
-                            @onclick="(() => ShowDetail(ct.Training.Id))">
+                            @onclick="(() => ShowDetail(!showDetail,ct.Training.Id))">
                                 Details
-                            </button>                          
+                            </button>
                         </div>
                     </div>
                 </div>
+                @if (showDetail)
+                {
+                    <p>@ct.Training!.Detail</p>
+                    @if (courses != null)
+                    {
+                        @foreach (Course course in courses!)
+                        {
+                            <div class="col-sm-12 col-md-6 col-lg-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <p>Begin: @course.StartDate.ToShortDateString()</p>
+                                        <p>End: @course.EndDate.ToShortDateString()</p>
+                                        <p>
+                                            City: @course.Classroom!.User!.ZipCode
+                                            @course.Classroom.User.City
+                                        </p>
+                                        <button class="btn btn-success"
+                                        @onclick="(() => Select(course.Id))">
+                                           Select
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                }
             }
         </div>
     }
@@ -73,6 +99,8 @@ else
     private int IdParent = 0;
     private List<CategoryTraining>? categoryTrainings;
     private bool showTrainings;
+    private List<Course>? courses;
+    private bool showDetail;
 
 
     protected override async Task OnInitializedAsync()
@@ -110,10 +138,15 @@ else
         // links from category.id
         categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + categoryid);
     }
-   
 
-    private  void ShowDetail(int id)
+
+    private async Task ShowDetail(bool show,int id)
     {
-        NavigationManager.NavigateTo("trainingDetail/"+id);
-    } 
+        showDetail = show;
+        courses = await client.HttpClient.GetFromJsonAsync<List<Course>>("api/Courses/" + id);
+    }
+    private void Select(int courseid)
+    {
+        NavigationManager.NavigateTo("userCourses/"+courseid);
+    }
 }

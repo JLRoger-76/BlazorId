@@ -1,0 +1,55 @@
+﻿@page "/userCourses/{courseid}"
+@using Microsoft.AspNetCore.Authorization;
+@using BlazorId.Shared;
+@inject HttpClient client
+@inject AuthenticationStateProvider authenticationStateProvider
+
+@attribute [Authorize]
+
+<h3>Registration @userName</h3>
+@if (userCourses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    @if (!userCourses.Any())
+    {
+        <button class="btn btn-success"
+        @onclick="(() => Confirm())">
+            Confirm registration to course
+        </button>
+    }
+    else
+    {
+        <p>You are already registered to this course</p>
+    }
+}
+
+
+@code {
+    [Parameter]
+    public string? courseid { get; set; }
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private string? userName;
+    private UserCourse objuserCourse = new UserCourse();
+    private List<UserCourse>? userCourses;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Extract the name of then current logged in user Claim
+        userName = (await authenticationStateTask).User.Identity!.Name;
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>($"api/UserCourses/Params?name={userName}&id={courseid}");
+
+    }
+    private async Task Confirm()
+    {
+        objuserCourse.CourseId = Int32.Parse(courseid);
+        objuserCourse.UserName = userName;
+
+        await client.PostAsJsonAsync("api/UserCourses", objuserCourse);
+
+    }
+
+}
