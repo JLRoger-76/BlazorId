@@ -16,6 +16,11 @@
             </div>
             <AuthorizeView Roles="Administrator">
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="users">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Users
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
                     <NavLink class="nav-link" href="categories">
                         <span class="oi oi-list-rich" aria-hidden="true"></span> Categories
                     </NavLink>
@@ -39,10 +44,15 @@
             <AuthorizeView>
                 <Authorized>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="users">
-                            <span class="oi oi-list-rich" aria-hidden="true"></span> Users
+                        <NavLink class="nav-link" href="dailyAttendances">
+                            <span class="oi oi-list-rich" aria-hidden="true"></span> Attendances
                         </NavLink>
-                    </div>           
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="notations">
+                            <span class="oi oi-list-rich" aria-hidden="true"></span> Notations
+                        </NavLink>
+                    </div>
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="claims">
                             <span class="oi oi-list-rich" aria-hidden="true"></span> Claims

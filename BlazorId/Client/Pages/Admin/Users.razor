@@ -127,7 +127,7 @@ else
     private async Task EditUser(ApplicationUser user)
     {
         //get the user
-        objUser = await client.GetFromJsonAsync<ApplicationUser>("api/users/" + user.Id);
+        objUser = await client.GetFromJsonAsync<ApplicationUser>("api/users/" + user.UserName);
         // get roles
         roles = await client.GetFromJsonAsync<List<IdentityRole>>("api/roles");    
         // gt userRole

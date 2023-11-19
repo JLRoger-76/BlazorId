@@ -27,7 +27,48 @@ namespace BlazorId.Server.Controllers
             return await _context.UserCourses.ToListAsync();
         }
 
-        // GET: api/UserCourses/5
+        // GET: api/UserCourses/Users/5
+        [HttpGet("Users/{id}")]
+        public async Task<ActionResult<List<UserCourse>>> GetUserCourse(int id)
+        {
+            if (_context.UserCourses == null)
+            {
+                return NotFound();
+            }
+            var userCourse = await _context.UserCourses.
+                Where(u => u.CourseId == id).
+                ToListAsync();
+
+            if (userCourse == null)
+            {
+                return NotFound();
+            }
+
+            return userCourse;
+        }
+
+        // GET: api/UserCourses/Courses/x@x.com
+        [HttpGet("Courses/{name}")]
+        public async Task<ActionResult<List<UserCourse>>> GetUserCourse(string name)
+        {
+            if (_context.UserCourses == null)
+            {
+                return NotFound();
+            }
+            var userCourse = await _context.UserCourses.
+                Include(u=>u.Course).
+                Where(u => u.UserName == name).
+                ToListAsync();
+
+            if (userCourse == null)
+            {
+                return NotFound();
+            }
+
+            return userCourse;
+        }
+
+        // GET: api/UserCourses/Params?name= &id=
         [HttpGet("{Params}")]
         public async Task<ActionResult<List<UserCourse>>> GetUserCourse(string name,int id)
         {

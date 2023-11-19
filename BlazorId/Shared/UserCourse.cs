@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BlazorId.Shared
 {
@@ -21,5 +22,11 @@ namespace BlazorId.Shared
         public string? Satisfaction { get; set; }
         public bool? Recommendation { get; set; }
         public string? CourseProject { get; set; }
+        // Navigation property
+        public Course? Course { get; set; }
+        // Navigation property
+        public ICollection<DailyAttendance> DailyAttendance { get; } = new List<DailyAttendance>();
+        [NotMapped]
+        public bool IsPresent {  get; set; }
     }
 }

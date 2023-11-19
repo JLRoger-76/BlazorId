@@ -20,5 +20,6 @@ namespace BlazorId.Server.Data
         public DbSet<Classroom> Classrooms { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<UserCourse> UserCourses { get; set; }
+        public DbSet<DailyAttendance> DailyAttendances { get; set; }
     }
 }

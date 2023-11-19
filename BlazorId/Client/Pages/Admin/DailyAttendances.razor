@@ -1,0 +1,67 @@
+﻿@page "/dailyAttendances"
+@using BlazorId.Shared;
+@using Microsoft.AspNetCore.Authorization;
+@inject HttpClient client;
+
+@attribute [Authorize]
+
+<h3>DailyAttendances:@today.ToShortDateString()</h3>
+@if (userCourses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="container-fluid">
+        <table class="table table-light table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Presence</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var userCourse in userCourses)
+                {
+                    <tr>
+                        <td>@userCourse.UserName</td>
+                        <td>
+                            <InputRadioGroup @bind-Value="@userCourse.IsPresent">
+                                <InputRadio Value="true" /> Yes
+                                <InputRadio Value="false" />No
+                            </InputRadioGroup>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button class="btn btn-success"
+                @onclick="(() => Save(userCourses))">
+            Save
+        </button>
+    </div>
+}
+@code {
+    private List<UserCourse>? userCourses;
+    private int courseId = 4;
+    private DateTime today = DateTime.Now;
+    private DailyAttendance dailyAttendance;
+    protected override async Task OnInitializedAsync()
+    {
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
+    }
+
+    private async Task Save(List<UserCourse> userCourses)
+    {
+        
+        foreach (var userCourse in userCourses)           
+        {    
+            dailyAttendance = new DailyAttendance{};
+            dailyAttendance.DailyDate = today;
+            dailyAttendance.UserCourseId = userCourse.Id;
+            dailyAttendance.IsPresent = userCourse.IsPresent;          
+           await client.PostAsJsonAsync("api/DailyAttendances", dailyAttendance);
+        }
+    }
+}
+

@@ -5,7 +5,7 @@
 namespace BlazorId.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class usercourse : Migration
+    public partial class userCourse : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,7 +33,18 @@ namespace BlazorId.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserCourses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserCourses_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserCourses_CourseId",
+                table: "UserCourses",
+                column: "CourseId");
         }
 
         /// <inheritdoc />

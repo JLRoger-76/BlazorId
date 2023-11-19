@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorId.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231115084036_usercourse")]
-    partial class usercourse
+    [Migration("20231118132007_presence")]
+    partial class presence
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -203,6 +203,30 @@ namespace BlazorId.Server.Migrations
                     b.ToTable("Courses");
                 });
 
+            modelBuilder.Entity("BlazorId.Shared.DailyAttendance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DailyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPresent")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserCourseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserCourseId");
+
+                    b.ToTable("DailyAttendances");
+                });
+
             modelBuilder.Entity("BlazorId.Shared.Training", b =>
                 {
                     b.Property<int>("Id")
@@ -277,6 +301,8 @@ namespace BlazorId.Server.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
 
                     b.ToTable("UserCourses");
                 });
@@ -608,6 +634,28 @@ namespace BlazorId.Server.Migrations
                     b.Navigation("Training");
                 });
 
+            modelBuilder.Entity("BlazorId.Shared.DailyAttendance", b =>
+                {
+                    b.HasOne("BlazorId.Shared.UserCourse", "UserCourse")
+                        .WithMany("DailyAttendance")
+                        .HasForeignKey("UserCourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserCourse");
+                });
+
+            modelBuilder.Entity("BlazorId.Shared.UserCourse", b =>
+                {
+                    b.HasOne("BlazorId.Shared.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -657,6 +705,11 @@ namespace BlazorId.Server.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BlazorId.Shared.UserCourse", b =>
+                {
+                    b.Navigation("DailyAttendance");
                 });
 #pragma warning restore 612, 618
         }

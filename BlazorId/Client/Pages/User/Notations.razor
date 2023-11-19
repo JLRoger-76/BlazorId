@@ -1,0 +1,158 @@
+﻿@page "/notations"
+@using Microsoft.AspNetCore.Authorization;
+@using BlazorId.Shared;
+@inject HttpClient client
+
+@attribute [Authorize]
+
+
+@if (userCourses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="container-fluid">
+        <ul class="list-group">
+            @foreach (var userCourse in userCourses)
+            {
+                <h3>Notations du @userCourse.Course!.EndDate.ToShortDateString()</h3>
+                <li> Welcome</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="WelcomeGroup" @bind-Value="@userCourse.Welcome">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="WelcomeGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li> Environment</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="EnvironmentGroup" @bind-Value="@userCourse.Enviromnent">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="EnvironmentGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li> Content</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="ContentGroup" @bind-Value="@userCourse.Content">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="ContentGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li> TeacherPedagogy</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="TeacherPedagogyGroup" @bind-Value="@userCourse.TeacherPedagogy">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="TeacherPedagogyGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li> TeacherExpertise</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="TeacherExpertiseGroup" @bind-Value="@userCourse.TeacherExpertise">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="TeacherExpertiseGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li> TeacherAvailability</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="TeacherAvailabilityGroup" @bind-Value="@userCourse.TeacherAvailability">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="TeacherAvailabilityGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li> TeacherAnswers</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="TeacherAnswersGroup" @bind-Value="@userCourse.TeacherAnswers">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="TeacherAnswersGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li> TeacherAnimation</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup Name="TeacherAnimationGroup" @bind-Value="@userCourse.TeacherAnimation">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <InputRadio Name="TeacherAnimationGroup" Value="i" />
+
+                            @i
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li>Satisfaction</li>
+                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                    <InputRadioGroup @bind-Value="@userCourse.Satisfaction">
+                        @foreach (var satisfaction in satisfactions)
+                        {
+                            <InputRadio Value="satisfaction" />
+                            @satisfaction
+                        }
+                    </InputRadioGroup>
+                </li>
+                <li>Recommendation</li>
+                <li class="list-group-item list-group-item-secondary ">
+                    <InputRadioGroup @bind-Value="@userCourse.Recommendation">
+                        <InputRadio Value="true" /> Yes             
+                        <InputRadio Value="false" />No
+                    </InputRadioGroup>                    
+                </li>
+                <li>
+                    <input class="form-control" type="text"
+                           placeholder="Training project"
+                    @bind="@userCourse.CourseProject" />
+                </li>
+                <button class="btn btn-success"
+                @onclick="(() => Update(userCourse))">
+                    Save teacher and classroom notes for the course
+                </button>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private string? userName;
+    private List<UserCourse>? userCourses;
+    private int courseId = 4;
+    List<String> satisfactions = new List<string> { "Très Insatisfait", "Insatisfait", "Satisfait","Très Satisfait" };
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // Extract the name of then current logged in user Claim
+        userName = (await authenticationStateTask).User.Identity!.Name;
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/"+userName);
+    }
+
+    private async Task Update(UserCourse userCourse)
+    {
+        await client.PutAsJsonAsync("api/UserCourses/"+userCourse.Id, userCourse);
+    }
+}

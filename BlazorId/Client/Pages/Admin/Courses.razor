@@ -69,6 +69,10 @@ else
                         @onclick="(() => Save(objCourse.Id,objCourse))">
                             Save
                         </button>
+                        <button class="btn btn-primary"
+                        @onclick="(() => ShowCandidates(objCourse.Id))">
+                            Show
+                        </button>
                     </td>
                 </tr>
             }
@@ -139,7 +143,7 @@ else
                                                 <button class="btn btn-primary"
                                                 @onclick="(() => SelectTraining(training))">
                                                     Select
-                                                </button>                   
+                                                </button>
                                             </td>
                                         </tr>
                                     }
@@ -159,6 +163,33 @@ else
                                 }
                             </InputSelect>
                         }
+                        @if (ShowPopup == 3)
+                        {
+                            <ul class="list-group">
+                                Select a teacher
+                                @foreach (var teacher in teachers)
+                                {
+                                    <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                                        @teacher.UserName
+                                        <button class="btn btn-warning"
+                                        @onclick="(() => AddTeacher(teacher.UserName))">
+                                            Add
+                                        </button>
+                                    </li>
+                                }
+                                Select students
+                                @foreach (var userCourse in userCourses)
+                                {
+                                    <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                                        @userCourse.UserName
+                                        <button class="btn btn-warning"
+                                        @onclick="(() => DeleteCandidat(userCourse.Id))">
+                                            Delete
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                        }
                     </div>
                 </div>
             </div>
@@ -172,6 +203,11 @@ else
     private List<Training>? trainings;
     private Training objTraining = new Training();
     private List<Classroom>? classrooms;
+    private List<UserCourse>? userCourses;
+    private List<ApplicationUser>? teachers;
+    private UserCourse objuserCourse = new UserCourse();
+    private int courseId;
+
     // To hold any possible errors
     string strError = "";
     // To enable showing the form
@@ -190,6 +226,7 @@ else
 
     private void Edit(Course course)
     {
+        courseId = course.Id;
         objCourse = course;
         ShowForm = true;
     }
@@ -212,6 +249,25 @@ else
         objCourse.Price = training.Price;
         objCourse.EndDate = objCourse.StartDate.AddDays(training.Duration);
         ClosePopup();
+    }
+    private async Task ShowCandidates(int courseId)
+    {
+        teachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");        
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
+        // Open the Popup
+        ShowPopup = 3;
+    }
+
+    private async Task AddTeacher(string name)
+    {
+        objuserCourse.CourseId = courseId;
+        objuserCourse.UserName = name;
+        await client.PostAsJsonAsync("api/UserCourses", objuserCourse);
+    }
+
+    private async Task DeleteCandidat(int id)
+    {
+        await client.DeleteAsync($"api/UserCourses/{id}");
     }
 
     private async Task Save(int id, Course course)

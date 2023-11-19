@@ -23,10 +23,10 @@ public class UserController : ControllerBase
         return Ok(users);
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ApplicationUser>> GetUser(string id)
+    [HttpGet("{name}")]
+    public async Task<ActionResult<ApplicationUser>> GetUser(string name)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _userManager.FindByNameAsync(name);
         if (user == null)
         {
             return NotFound();
