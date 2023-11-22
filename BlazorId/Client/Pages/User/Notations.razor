@@ -6,17 +6,21 @@
 @attribute [Authorize]
 
 
-@if (userCourses == null)
+@if (userCourse == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    <div class="container-fluid">
-        <ul class="list-group">
-            @foreach (var userCourse in userCourses)
-            {
-                <h3>Notations du @userCourse.Course!.EndDate.ToShortDateString()</h3>
+    @if (!isDate)
+    {
+        <p><em>Isn't the last day of the course!</em></p>
+    }
+    else
+    {
+        <h3>Notations du @userCourse.Course!.EndDate.ToShortDateString()</h3>
+        <div class="container-fluid">
+            <ul class="list-group">
                 <li> Welcome</li>
                 <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
                     <InputRadioGroup Name="WelcomeGroup" @bind-Value="@userCourse.Welcome">
@@ -118,41 +122,96 @@ else
                 <li>Recommendation</li>
                 <li class="list-group-item list-group-item-secondary ">
                     <InputRadioGroup @bind-Value="@userCourse.Recommendation">
-                        <InputRadio Value="true" /> Yes             
+                        <InputRadio Value="true" /> Yes
                         <InputRadio Value="false" />No
-                    </InputRadioGroup>                    
+                    </InputRadioGroup>
                 </li>
                 <li>
                     <input class="form-control" type="text"
                            placeholder="Training project"
-                    @bind="@userCourse.CourseProject" />
+                           @bind="@userCourse.CourseProject" />
                 </li>
                 <button class="btn btn-success"
-                @onclick="(() => Update(userCourse))">
+                        @onclick="(() => Update(userCourse))">
                     Save teacher and classroom notes for the course
                 </button>
-            }
-        </ul>
-    </div>
+
+            </ul>
+        </div>
+    }
 }
 
 @code {
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private bool isDate;
     private string? userName;
+    private UserCourse? userCourse;
+    private UserCourse? teacherCourse;
+    private int courseId;
+    List<String> satisfactions = new List<string> { "Très Insatisfait", "Insatisfait", "Satisfait", "Très Satisfait" };
+    private List<ApplicationUser>? teachers;
+    private List<UserCourse>? teacherCourses;
     private List<UserCourse>? userCourses;
-    private int courseId = 4;
-    List<String> satisfactions = new List<string> { "Très Insatisfait", "Insatisfait", "Satisfait","Très Satisfait" };
-    
+
     protected override async Task OnInitializedAsync()
     {
         // Extract the name of then current logged in user Claim
         userName = (await authenticationStateTask).User.Identity!.Name;
-        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/"+userName);
+        // get notation of current course
+        userCourse = await client.GetFromJsonAsync<UserCourse>("api/UserCourses/Current/"+userName);
+        courseId = userCourse!.Course!.Id;
+        // test if it's the last day of the course
+        isDate = (userCourse!.Course!.EndDate == DateTime.Today);
     }
 
     private async Task Update(UserCourse userCourse)
     {
-        await client.PutAsJsonAsync("api/UserCourses/"+userCourse.Id, userCourse);
+        //update student notes
+        await client.PutAsJsonAsync("api/UserCourses/" + userCourse.Id, userCourse);
+        
+        //update teacher of the course mean values
+        
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
+        //get teacher of the course
+        teachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");
+        foreach (UserCourse usercourse in userCourses)
+        {
+            foreach (var teacher in teachers)
+            {
+                //create teacherCourse
+                if (teacher.UserName == usercourse.UserName) teacherCourse = usercourse;
+            }
+        }
+        var count = 0;
+        //initialize teacher's notes
+        teacherCourse!.TeacherPedagogy = 0;
+        teacherCourse!.TeacherAnimation = 0;
+        teacherCourse!.TeacherAnswers = 0;
+        teacherCourse!.TeacherAvailability = 0;
+        teacherCourse!.TeacherExpertise = 0;
+        foreach (UserCourse usercourse in userCourses)
+        {
+            if (usercourse.Id != teacherCourse.Id)
+            {
+                if (usercourse.TeacherPedagogy > 0)
+                {
+                    count++;
+                    teacherCourse.TeacherPedagogy += usercourse.TeacherPedagogy;
+                    teacherCourse.TeacherAnimation += usercourse.TeacherAnimation;
+                    teacherCourse.TeacherAnswers += usercourse.TeacherAnswers;
+                    teacherCourse.TeacherAvailability += usercourse.TeacherAvailability;
+                    teacherCourse.TeacherExpertise += usercourse.TeacherExpertise;
+                }
+            }
+        }
+        //average calculation of each teacher note
+        teacherCourse.TeacherPedagogy = teacherCourse.TeacherPedagogy / count;
+        teacherCourse.TeacherAnimation = teacherCourse.TeacherAnimation / count;
+        teacherCourse.TeacherAnswers = teacherCourse.TeacherAnswers / count;
+        teacherCourse.TeacherAvailability = teacherCourse.TeacherAvailability / count;
+        teacherCourse.TeacherExpertise = teacherCourse.TeacherExpertise / count;
+        //update notes to teacher
+        await client.PutAsJsonAsync("api/UserCourses/" + teacherCourse.Id, teacherCourse);
     }
 }

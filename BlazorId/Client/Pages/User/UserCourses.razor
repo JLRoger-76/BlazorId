@@ -1,4 +1,4 @@
-﻿@page "/userCourses/{courseid}"
+﻿@page "/userCourses/{courseId}"
 @using Microsoft.AspNetCore.Authorization;
 @using BlazorId.Shared;
 @inject HttpClient client
@@ -7,49 +7,45 @@
 @attribute [Authorize]
 
 <h3>Registration @userName</h3>
-@if (userCourses == null)
+@if (userCourse == null)
 {
-    <p><em>Loading...</em></p>
+    <button class="btn btn-success"
+            @onclick="(() => Confirm())">
+        Confirm registration to course
+    </button>
 }
 else
 {
-    @if (!userCourses.Any())
-    {
-        <button class="btn btn-success"
-        @onclick="(() => Confirm())">
-            Confirm registration to course
-        </button>
-    }
-    else
-    {
-        <p>You are already registered to this course</p>
-    }
+    <p>You are already registered to this course</p>
 }
+
 
 
 @code {
     [Parameter]
-    public string? courseid { get; set; }
+    public string? courseId { get; set; }
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
     private string? userName;
     private UserCourse objuserCourse = new UserCourse();
-    private List<UserCourse>? userCourses;
+    private UserCourse? userCourse;
+    private bool newUserCourse;
 
     protected override async Task OnInitializedAsync()
     {
         // Extract the name of then current logged in user Claim
         userName = (await authenticationStateTask).User.Identity!.Name;
-        userCourses = await client.GetFromJsonAsync<List<UserCourse>>($"api/UserCourses/Params?name={userName}&id={courseid}");
-
+        try
+        {
+            userCourse = await client.GetFromJsonAsync<UserCourse>($"api/UserCourses/Params?name={userName}&id={courseId}");            
+        }
+        catch (HttpRequestException ex){}
+        catch (Exception ex){}
     }
     private async Task Confirm()
     {
-        objuserCourse.CourseId = Int32.Parse(courseid);
+        objuserCourse.CourseId = Int32.Parse(courseId);
         objuserCourse.UserName = userName;
-
         await client.PostAsJsonAsync("api/UserCourses", objuserCourse);
-
     }
-
 }

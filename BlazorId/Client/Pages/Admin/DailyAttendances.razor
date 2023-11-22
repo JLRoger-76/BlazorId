@@ -5,7 +5,7 @@
 
 @attribute [Authorize]
 
-<h3>DailyAttendances:@today.ToShortDateString()</h3>
+<h3>Presence:@today.ToShortDateString()</h3>
 @if (userCourses == null)
 {
     <p><em>Loading...</em></p>
@@ -42,12 +42,23 @@ else
     </div>
 }
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private string? userName;
+    private UserCourse? userCourse;
     private List<UserCourse>? userCourses;
-    private int courseId = 4;
+    private int courseId;
     private DateTime today = DateTime.Now;
     private DailyAttendance dailyAttendance;
+    
     protected override async Task OnInitializedAsync()
     {
+        // Extract the name of the current teacher logged in user Claim
+        userName = (await authenticationStateTask).User.Identity!.Name;
+        // get notation of current course
+        userCourse = await client.GetFromJsonAsync<UserCourse>("api/UserCourses/Current/" + userName);
+        courseId = userCourse!.Course!.Id;
+        // get student's notes
         userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
     }
 

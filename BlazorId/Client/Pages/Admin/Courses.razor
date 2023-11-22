@@ -11,6 +11,7 @@
 }
 else
 {
+    
     <table class="table table-light table-bordered">
         <thead>
             <tr>
@@ -22,7 +23,7 @@ else
                 <th>Price (euro)</th>
                 <th>
                     <button class="btn btn-primary"
-                    @onclick="(() => Edit(objCourse))">
+                            @onclick="(() => Edit(objCourse))">
                         Add
                     </button>
                 </th>
@@ -38,14 +39,14 @@ else
                     <td>
                         @objCourse.TrainingId
                         <button class="btn btn-primary"
-                        @onclick="(() => EditTraining())">
+                                @onclick="(() => EditTraining())">
                             Edit
                         </button>
                     </td>
                     <td>
                         @objCourse.ClassroomId
                         <button class="btn btn-primary"
-                        @onclick="(() => EditClassroom())">
+                                @onclick="(() => EditClassroom())">
                             Edit
                         </button>
                     </td>
@@ -62,15 +63,15 @@ else
                     <td>
                         <input class="form-control" type="number"
                                placeholder="Price €" style="width:100px"
-                        @bind="@objCourse.Price" />
+                               @bind="@objCourse.Price" />
                     </td>
                     <td>
                         <button class="btn btn-primary"
-                        @onclick="(() => Save(objCourse.Id,objCourse))">
+                                @onclick="(() => Save(objCourse.Id,objCourse))">
                             Save
                         </button>
                         <button class="btn btn-primary"
-                        @onclick="(() => ShowCandidates(objCourse.Id))">
+                                @onclick="(() => ShowCandidates(objCourse))">
                             Show
                         </button>
                     </td>
@@ -87,11 +88,11 @@ else
                     <td>@course.Price</td>
                     <td>
                         <button class="btn btn-primary"
-                        @onclick="(() => Edit(course))">
+                                @onclick="(() => Edit(course))">
                             Edit
                         </button>
                         <button class="btn btn-danger"
-                        @onclick="(() => Delete(course))">
+                                @onclick="(() => Delete(course))">
                             Delete
                         </button>
                     </td>
@@ -109,7 +110,7 @@ else
                         <h3 class="modal-title">Edit</h3>
                         <!-- Button to close the popup -->
                         <button type="button" class="close"
-                        @onclick="ClosePopup">
+                                @onclick="ClosePopup">
                             <span aria-hidden="true">X</span>
                         </button>
                     </div>
@@ -119,7 +120,7 @@ else
                         {
                             <input class="form-control" type="text"
                                    placeholder="Name"
-                            @bind="@objCourse.TrainingId" />
+                                   @bind="@objCourse.TrainingId" />
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -141,7 +142,7 @@ else
                                             <td>
                                                 <!-- Edit the training -->
                                                 <button class="btn btn-primary"
-                                                @onclick="(() => SelectTraining(training))">
+                                                        @onclick="(() => SelectTraining(training))">
                                                     Select
                                                 </button>
                                             </td>
@@ -154,7 +155,7 @@ else
                         {
                             <input class="form-control" type="text"
                                    placeholder="Name"
-                            @bind="@objCourse.ClassroomId" />
+                                   @bind="@objCourse.ClassroomId" />
                             <InputSelect class="form-select " @bind-Value="@objCourse.ClassroomId">
                                 <option selected>Select a Training</option>
                                 @foreach (var classroom in classrooms)
@@ -170,9 +171,9 @@ else
                                 @foreach (var teacher in teachers)
                                 {
                                     <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
-                                        @teacher.UserName
+                                        @teacher.UserName (@teacher.Appreciation)
                                         <button class="btn btn-warning"
-                                        @onclick="(() => AddTeacher(teacher.UserName))">
+                                                @onclick="(() => AddTeacher(teacher.UserName))">
                                             Add
                                         </button>
                                     </li>
@@ -183,7 +184,7 @@ else
                                     <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
                                         @userCourse.UserName
                                         <button class="btn btn-warning"
-                                        @onclick="(() => DeleteCandidat(userCourse.Id))">
+                                                @onclick="(() => DeleteCandidat(userCourse.Id))">
                                             Delete
                                         </button>
                                     </li>
@@ -205,8 +206,11 @@ else
     private List<Classroom>? classrooms;
     private List<UserCourse>? userCourses;
     private List<ApplicationUser>? teachers;
+    private List<UserCourse>? teacherCourses;
+    private List<UserCourse>? newteacherCourses;
     private UserCourse objuserCourse = new UserCourse();
     private int courseId;
+
 
     // To hold any possible errors
     string strError = "";
@@ -250,12 +254,54 @@ else
         objCourse.EndDate = objCourse.StartDate.AddDays(training.Duration);
         ClosePopup();
     }
-    private async Task ShowCandidates(int courseId)
+
+    private async Task ShowCandidates(Course editcourse)
     {
-        teachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");        
+        //teachers list
+        teachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");
+        //courses list from training
+        var courses = await client.GetFromJsonAsync<List<Course>>("api/Courses/" + editcourse.TrainingId);
+        foreach (var teacher in teachers)
+        {
+            //notes list from teacher
+            teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
+            // select notes only for defined courses
+            teacher.Appreciation = 0;
+           
+            foreach (Course course in courses)
+            {
+                var count = 0.00;
+                foreach (var tc in teacherCourses!)
+                {
+                    if (tc.CourseId == course.Id)
+                    {
+                        if (tc.TeacherAnimation  > 0) count++;
+                        if (tc.TeacherAnswers  > 0) count++;
+                        if (tc.TeacherAvailability > 0) count++;
+                        if (tc.TeacherExpertise > 0) count++;
+                        if (tc.TeacherPedagogy > 0) count++;
+                        // sum of notes for the teacher
+                        teacher.Appreciation +=(
+                        (tc.TeacherAnimation ) +
+                        (tc.TeacherAnswers) +
+                        (tc.TeacherAvailability) +
+                        (tc.TeacherExpertise) +
+                        (tc.TeacherPedagogy))/count;
+                    }
+                }
+            }
+        }
+        // Sort the best teachers based on Appreciation in descending order
+        teachers = teachers      
+            .OrderByDescending(course => course.Appreciation)
+            .Take(5)
+            .ToList();
+        // List of students & teacher in the course
         userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
+        
         // Open the Popup
         ShowPopup = 3;
+
     }
 
     private async Task AddTeacher(string name)

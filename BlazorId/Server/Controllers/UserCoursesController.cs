@@ -38,12 +38,10 @@ namespace BlazorId.Server.Controllers
             var userCourse = await _context.UserCourses.
                 Where(u => u.CourseId == id).
                 ToListAsync();
-
             if (userCourse == null)
             {
                 return NotFound();
             }
-
             return userCourse;
         }
 
@@ -55,36 +53,52 @@ namespace BlazorId.Server.Controllers
             {
                 return NotFound();
             }
-            var userCourse = await _context.UserCourses.
+            var userCourses = await _context.UserCourses.
                 Include(u=>u.Course).
                 Where(u => u.UserName == name).
                 ToListAsync();
+            if (userCourses == null)
+            {
+                return NotFound();
+            }
+            return userCourses;
+        }
 
+        // GET: api/UserCourses/Current/x@x.com
+        [HttpGet("Current/{name}")]
+        public async Task<ActionResult<UserCourse>> GetCurrentCourse(string name)
+        {
+            if (_context.UserCourses == null)
+            {
+                return NotFound();
+            }
+            var userCourse = await _context.UserCourses.
+                Include(u => u.Course).
+                Where(u=>u.Course!.StartDate<=DateTime.Today).
+                Where(u => u.Course!.EndDate >= DateTime.Today).
+                FirstOrDefaultAsync(u => u.UserName == name);
             if (userCourse == null)
             {
                 return NotFound();
             }
-
             return userCourse;
         }
 
         // GET: api/UserCourses/Params?name= &id=
         [HttpGet("{Params}")]
-        public async Task<ActionResult<List<UserCourse>>> GetUserCourse(string name,int id)
+        public async Task<ActionResult<UserCourse>> GetUserCourse(string name,int id)
         {
           if (_context.UserCourses == null)
           {
               return NotFound();
           }
             var userCourse = await _context.UserCourses.
-                Where(u=>u.UserName==name && u.CourseId==id).   
-                ToListAsync();
-
+                Include(u => u.Course).
+                FirstOrDefaultAsync(u => u.UserName == name && u.CourseId == id);              
             if (userCourse == null)
             {
                 return NotFound();
             }
-
             return userCourse;
         }
 
@@ -97,9 +111,7 @@ namespace BlazorId.Server.Controllers
             {
                 return BadRequest();
             }
-
             _context.Entry(userCourse).State = EntityState.Modified;
-
             try
             {
                 await _context.SaveChangesAsync();
@@ -115,7 +127,6 @@ namespace BlazorId.Server.Controllers
                     throw;
                 }
             }
-
             return NoContent();
         }
 
@@ -130,7 +141,6 @@ namespace BlazorId.Server.Controllers
           }
             _context.UserCourses.Add(userCourse);
             await _context.SaveChangesAsync();
-
             return CreatedAtAction("GetUserCourse", new { id = userCourse.Id }, userCourse);
         }
 
@@ -147,10 +157,8 @@ namespace BlazorId.Server.Controllers
             {
                 return NotFound();
             }
-
             _context.UserCourses.Remove(userCourse);
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 

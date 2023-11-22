@@ -45,9 +45,6 @@ namespace BlazorId.Server.Controllers
             {
                 return NotFound("User not found");
             }
-
-
-
             var result = await _userManager.AddToRoleAsync(user, roleName);
             if (result.Succeeded)
             {
