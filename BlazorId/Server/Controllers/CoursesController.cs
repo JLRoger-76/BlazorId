@@ -32,7 +32,25 @@ namespace BlazorId.Server.Controllers
 
         // GET: api/Courses/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<IEnumerable<Course>>> GetCourse(int id)
+        public async Task<ActionResult<Course>> GetCourse(int id)
+        {
+            if (_context.Courses == null)
+            {
+                return NotFound();
+            }
+            var course = await _context.Courses.
+                Include(c => c.Training).
+                FirstOrDefaultAsync(c=>c.Id==id);
+            if (course == null)
+            {
+                return NotFound();
+            }
+            return course;
+        }
+
+        // GET: api/Courses/Training/5
+        [HttpGet("Training/{id}")]
+        public async Task<ActionResult<IEnumerable<Course>>> GetCourseTraining(int id)
         {
           if (_context.Courses == null)
           {

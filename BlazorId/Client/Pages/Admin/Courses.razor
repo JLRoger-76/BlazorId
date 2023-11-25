@@ -1,6 +1,7 @@
 ﻿@page "/courses"
 @using BlazorId.Shared;
 @using Microsoft.AspNetCore.Authorization;
+@inject NavigationManager NavigationManager
 @inject HttpClient client;
 
 @attribute [Authorize]
@@ -11,7 +12,7 @@
 }
 else
 {
-    
+
     <table class="table table-light table-bordered">
         <thead>
             <tr>
@@ -22,10 +23,13 @@ else
                 <th>End Date</th>
                 <th>Price (euro)</th>
                 <th>
-                    <button class="btn btn-primary"
-                            @onclick="(() => Edit(objCourse))">
+                    @if (!ShowForm)
+                    {
+                        <button class="btn btn-primary"
+                        @onclick="(() => Edit(objCourse))">
                         Add
                     </button>
+                    }
                 </th>
             </tr>
         </thead>
@@ -163,34 +167,7 @@ else
                                     <option value="@classroom.Id">@classroom.Name</option>
                                 }
                             </InputSelect>
-                        }
-                        @if (ShowPopup == 3)
-                        {
-                            <ul class="list-group">
-                                Select a teacher
-                                @foreach (var teacher in teachers)
-                                {
-                                    <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
-                                        @teacher.UserName (@teacher.Appreciation)
-                                        <button class="btn btn-warning"
-                                                @onclick="(() => AddTeacher(teacher.UserName))">
-                                            Add
-                                        </button>
-                                    </li>
-                                }
-                                Select students
-                                @foreach (var userCourse in userCourses)
-                                {
-                                    <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
-                                        @userCourse.UserName
-                                        <button class="btn btn-warning"
-                                                @onclick="(() => DeleteCandidat(userCourse.Id))">
-                                            Delete
-                                        </button>
-                                    </li>
-                                }
-                            </ul>
-                        }
+                        }                       
                     </div>
                 </div>
             </div>
@@ -204,11 +181,6 @@ else
     private List<Training>? trainings;
     private Training objTraining = new Training();
     private List<Classroom>? classrooms;
-    private List<UserCourse>? userCourses;
-    private List<ApplicationUser>? teachers;
-    private List<UserCourse>? teacherCourses;
-    private List<UserCourse>? newteacherCourses;
-    private UserCourse objuserCourse = new UserCourse();
     private int courseId;
 
 
@@ -255,65 +227,9 @@ else
         ClosePopup();
     }
 
-    private async Task ShowCandidates(Course editcourse)
+    private void ShowCandidates(Course editcourse)
     {
-        //teachers list
-        teachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");
-        //courses list from training
-        var courses = await client.GetFromJsonAsync<List<Course>>("api/Courses/" + editcourse.TrainingId);
-        foreach (var teacher in teachers)
-        {
-            //notes list from teacher
-            teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
-            // select notes only for defined courses
-            teacher.Appreciation = 0;
-           
-            foreach (Course course in courses)
-            {
-                var count = 0.00;
-                foreach (var tc in teacherCourses!)
-                {
-                    if (tc.CourseId == course.Id)
-                    {
-                        if (tc.TeacherAnimation  > 0) count++;
-                        if (tc.TeacherAnswers  > 0) count++;
-                        if (tc.TeacherAvailability > 0) count++;
-                        if (tc.TeacherExpertise > 0) count++;
-                        if (tc.TeacherPedagogy > 0) count++;
-                        // sum of notes for the teacher
-                        teacher.Appreciation +=(
-                        (tc.TeacherAnimation ) +
-                        (tc.TeacherAnswers) +
-                        (tc.TeacherAvailability) +
-                        (tc.TeacherExpertise) +
-                        (tc.TeacherPedagogy))/count;
-                    }
-                }
-            }
-        }
-        // Sort the best teachers based on Appreciation in descending order
-        teachers = teachers      
-            .OrderByDescending(course => course.Appreciation)
-            .Take(5)
-            .ToList();
-        // List of students & teacher in the course
-        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
-        
-        // Open the Popup
-        ShowPopup = 3;
-
-    }
-
-    private async Task AddTeacher(string name)
-    {
-        objuserCourse.CourseId = courseId;
-        objuserCourse.UserName = name;
-        await client.PostAsJsonAsync("api/UserCourses", objuserCourse);
-    }
-
-    private async Task DeleteCandidat(int id)
-    {
-        await client.DeleteAsync($"api/UserCourses/{id}");
+        NavigationManager.NavigateTo("course/" + editcourse.Id);
     }
 
     private async Task Save(int id, Course course)
