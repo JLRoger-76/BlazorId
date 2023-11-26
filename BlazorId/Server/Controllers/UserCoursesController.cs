@@ -79,7 +79,7 @@ namespace BlazorId.Server.Controllers
                 FirstOrDefaultAsync(u => u.UserName == name);
             if (userCourse == null)
             {
-                return NotFound();
+                return null;
             }
             return userCourse;
         }

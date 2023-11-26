@@ -1,39 +1,42 @@
-﻿@page "/course/{Id:int}"
+﻿@page "/course/{courseId:int}"
 @using BlazorId.Shared;
 @using Microsoft.AspNetCore.Authorization;
 @inject HttpClient client;
 
 @attribute [Authorize]
 
-<h3>CourseDetail</h3>
-@if (freeTeachers == null)
+<h3>Course Detail</h3>
+@if (userCourses == null)
 {
     <p><em>Chargement...</em></p>
 }
 else
 {
-    <ul class="list-group">
-        @if (freeTeachers.Count != 0)
-        {
-            <p>Select a teacher</p>
-            @foreach (var teacher in freeTeachers)
+    @if (teacherCourse == null)
+    {
+        <ul class="list-group">
+            @if (freeTeachers.Count != 0)
             {
-                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
-                    @teacher.UserName (@teacher.Appreciation)
-                    <button class="btn btn-warning"
-                            @onclick="(() => AddTeacher(teacher.UserName))">
-                        Add
-                    </button>
-                </li>
+                <p>Select a teacher</p>
+                @foreach (var teacher in freeTeachers)
+                {
+                    <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+                        @teacher.UserName (@teacher.Appreciation)
+                        <button class="btn btn-warning"
+                                @onclick="(() => AddTeacher(teacher.UserName))">
+                            Add
+                        </button>
+                    </li>
+                }
             }
-        }
-    </ul>
+        </ul>
+    }
     <p>Select students</p>
     <table class="table table-light table-bordered">
         <thead>
             <tr>
                 <th>Animation</th>
-                <th>Anwers</th>               
+                <th>Anwers</th>
                 <th>Available</th>
                 <th>Expertise</th>
                 <th>Pedagogy</th>
@@ -77,94 +80,103 @@ else
             }
         </tbody>
     </table>
-
-
-
 }
 
 @code {
     [Parameter]
-    public int Id { get; set; }
+    public int courseId { get; set; }
     private Course editCourse;
-    private List<ApplicationUser>? allTeachers;
+    private List<ApplicationUser>? teachers;
     private List<ApplicationUser>? freeTeachers;
     private List<UserCourse>? userCourses;
     private UserCourse objuserCourse = new UserCourse();
     private List<UserCourse>? teacherCourses;
 
+    private UserCourse? teacherCourse;
+
 
     protected override async Task OnInitializedAsync()
     {
-        editCourse = await client.GetFromJsonAsync<Course>("api/Courses/" + Id);
-
-        freeTeachers = new List<ApplicationUser>();
-        //courses list from training
-        var courses = await client.GetFromJsonAsync<List<Course>>("api/Courses/Training/" + editCourse.TrainingId);
-        //teachers list
-        allTeachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");
-        foreach (var teacher in allTeachers)
+        teacherCourse = null;
+        // List of students & teacher in the course
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
+        //get teacher of the course
+        teachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");
+        foreach (UserCourse usercourse in userCourses)
         {
-            var isFree = true;
-            //notes list from teacher
-            teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
-            //add free teacher
-            foreach (var tc in teacherCourses!)
+            foreach (var teacher in teachers)
             {
-                if ((tc.Course.StartDate >= editCourse.StartDate &
-                     tc.Course.StartDate <= editCourse.EndDate) ||
-                    (tc.Course.EndDate >= editCourse.StartDate &
-                     tc.Course.EndDate <= editCourse.EndDate))
-                {
-                    isFree = false;
-                }
-            }
-            if (isFree)
-            {
-                freeTeachers.Add(teacher);
+                //create teacherCourse
+                if (teacher.UserName == usercourse.UserName) teacherCourse = usercourse;
             }
         }
-        foreach (var teacher in freeTeachers)
+        if (teacherCourse == null)
         {
-            //notes list from teacher
-            teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
-            // select notes only for defined courses
-            teacher.Appreciation = 0;
+            editCourse = await client.GetFromJsonAsync<Course>("api/Courses/" + courseId);
 
-            foreach (Course course in courses)
+            freeTeachers = new List<ApplicationUser>();
+            //courses list from training
+            var trainingCourses = await client.GetFromJsonAsync<List<Course>>("api/Courses/Training/" + editCourse.TrainingId);
+            //teachers list
+            foreach (var teacher in teachers)
             {
-                var count = 0.00;
+                var isFree = true;
+                //notes list from teacher
+                teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
+                //add free teacher
                 foreach (var tc in teacherCourses!)
                 {
-                    if (tc.CourseId == course.Id)
+                    if ((tc.Course.StartDate >= editCourse.StartDate &
+                         tc.Course.StartDate <= editCourse.EndDate) ||
+                        (tc.Course.EndDate >= editCourse.StartDate &
+                         tc.Course.EndDate <= editCourse.EndDate))
                     {
-                        if (tc.TeacherAnimation > 0) count++;
-                        if (tc.TeacherAnswers > 0) count++;
-                        if (tc.TeacherAvailability > 0) count++;
-                        if (tc.TeacherExpertise > 0) count++;
-                        if (tc.TeacherPedagogy > 0) count++;
-                        // sum of notes for the teacher
-                        teacher.Appreciation += (
-                        (tc.TeacherAnimation) +
-                        (tc.TeacherAnswers) +
-                        (tc.TeacherAvailability) +
-                        (tc.TeacherExpertise) +
-                        (tc.TeacherPedagogy)) / count;
+                        isFree = false;
                     }
                 }
+                if (isFree)
+                {
+                    //notes list from teacher
+                    teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
+                    // select notes only for defined courses
+                    teacher.Appreciation = 0;
+
+                    foreach (Course course in trainingCourses)
+                    {
+                        var count = 0.00;
+                        foreach (var tc in teacherCourses!)
+                        {
+                            if (tc.CourseId == course.Id)
+                            {
+                                if (tc.TeacherAnimation > 0) count++;
+                                if (tc.TeacherAnswers > 0) count++;
+                                if (tc.TeacherAvailability > 0) count++;
+                                if (tc.TeacherExpertise > 0) count++;
+                                if (tc.TeacherPedagogy > 0) count++;
+                                // sum of notes for the teacher
+                                teacher.Appreciation += (
+                                (tc.TeacherAnimation) +
+                                (tc.TeacherAnswers) +
+                                (tc.TeacherAvailability) +
+                                (tc.TeacherExpertise) +
+                                (tc.TeacherPedagogy)) / count;
+                            }
+                        }
+                    }
+                    freeTeachers.Add(teacher);
+                }
             }
+            // Sort the best teachers based on Appreciation in descending order
+            freeTeachers = freeTeachers
+                .OrderByDescending(course => course.Appreciation)
+                .Take(5)
+                .ToList();
         }
-        // Sort the best teachers based on Appreciation in descending order
-        freeTeachers = freeTeachers
-            .OrderByDescending(course => course.Appreciation)
-            .Take(5)
-            .ToList();
-        // List of students & teacher in the course
-        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + editCourse.Id);
     }
 
     private async Task AddTeacher(string name)
     {
-        objuserCourse.CourseId = Id;
+        objuserCourse.CourseId = courseId;
         objuserCourse.UserName = name;
         await client.PostAsJsonAsync("api/UserCourses", objuserCourse);
         await OnInitializedAsync();
