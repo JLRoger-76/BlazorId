@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BlazorId.Server.Data;
 using BlazorId.Shared;
+using BlazorId.Server.Migrations;
 
 namespace BlazorId.Server.Controllers
 {
@@ -48,6 +49,49 @@ namespace BlazorId.Server.Controllers
             }
 
             return classroom;
+        }
+
+        // GET: api/Classrooms/Free/5
+        [HttpGet("Free/{id}")]
+        public async Task<ActionResult<IEnumerable<Classroom>>> GetFreeClassrooms(int id)
+        {
+            if (_context.Classrooms == null)
+            {
+                return NotFound();
+            }
+            var editCourse = await _context.Courses.FindAsync(id);
+            if (editCourse == null)
+            {
+                return NotFound();
+            }
+            var classrooms= await _context.Classrooms.ToListAsync();
+            var courses= await _context.Courses.ToListAsync();
+            List<Classroom> freeClassrooms = new List<Classroom>();
+            foreach (Classroom classroom in classrooms)
+            {
+                var isFree = true;
+
+                foreach (Course course in courses)
+                {
+                    if (course.Classroom.Id == classroom.Id)
+                    {
+                        if ((course.StartDate >= editCourse.StartDate && course.StartDate <= editCourse.EndDate) ||
+                            (course.EndDate >= editCourse.StartDate && course.EndDate <= editCourse.EndDate))
+                        {
+                            isFree = false;
+                            break; // No need to continue checking other courses for this classroom
+                        }
+                    }
+                }
+
+                if (isFree)
+                {
+                    freeClassrooms.Add(classroom);
+                }
+            }
+
+
+            return Ok(freeClassrooms);
         }
 
         // PUT: api/Classrooms/5

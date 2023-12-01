@@ -6,13 +6,13 @@
 @attribute [Authorize]
 
 
-@if (userCourse == null)
+@if (userCourses == null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>En Chargement...</em></p>
 }
 else
 {
-    @if (!isDate)
+    @if (userCourse==null)
     {
         <p><em>Isn't the last day of the course!</em></p>
     }
@@ -144,7 +144,6 @@ else
 @code {
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
-    private bool isDate;
     private string? userName;
     private UserCourse? userCourse;
     private UserCourse? teacherCourse;
@@ -158,11 +157,10 @@ else
     {
         // Extract the name of then current logged in user Claim
         userName = (await authenticationStateTask).User.Identity!.Name;
-        // get notation of current course
-        userCourse = await client.GetFromJsonAsync<UserCourse>("api/UserCourses/Current/"+userName);
-        courseId = userCourse!.Course!.Id;
-        // test if it's the last day of the course
-        isDate = (userCourse!.Course!.EndDate == DateTime.Today);
+        // get userCourses of student
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + userName);
+        // find current userCourse
+        userCourse = userCourses!.Find(u => u.Course.EndDate == DateTime.Today)!;  
     }
 
     private async Task Update(UserCourse userCourse)
@@ -171,8 +169,8 @@ else
         await client.PutAsJsonAsync("api/UserCourses/" + userCourse.Id, userCourse);
         
         //update teacher of the course mean values
-        
-        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
+        courseId = userCourse.Course!.Id;
+        var userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
         //get teacher of the course
         teachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserRole/Role/Teacher");
         foreach (UserCourse usercourse in userCourses)

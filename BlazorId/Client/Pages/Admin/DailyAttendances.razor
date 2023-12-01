@@ -53,13 +53,19 @@ else
     
     protected override async Task OnInitializedAsync()
     {
-        // Extract the name of the current teacher logged in user Claim
+        // Extract the name of the current teacherlogged in user Claim
         userName = (await authenticationStateTask).User.Identity!.Name;
-        // get notation of current course
-        userCourse = await client.GetFromJsonAsync<UserCourse>("api/UserCourses/Current/" + userName);
+        // get userCourses of teachers
+        userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + userName);
+        // find current userCourse
+        userCourse = userCourses!.Find(u => u.Course!.StartDate <= DateTime.Today &&
+         u.Course!.EndDate >= DateTime.Today)!;
+         //extract couseID
         courseId = userCourse!.Course!.Id;
         // get student's notes
         userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
+        
+            
     }
 
     private async Task Save(List<UserCourse> userCourses)

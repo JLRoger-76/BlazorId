@@ -27,8 +27,8 @@ else
                     {
                         <button class="btn btn-primary"
                         @onclick="(() => Edit(objCourse))">
-                        Add
-                    </button>
+                            Add
+                        </button>
                     }
                 </th>
             </tr>
@@ -43,14 +43,14 @@ else
                     <td>
                         @objCourse.TrainingId
                         <button class="btn btn-primary"
-                                @onclick="(() => EditTraining())">
+                        @onclick="(() => EditTraining())">
                             Edit
                         </button>
                     </td>
                     <td>
                         @objCourse.ClassroomId
                         <button class="btn btn-primary"
-                                @onclick="(() => EditClassroom())">
+                        @onclick="(() => EditClassroom(objCourse))">
                             Edit
                         </button>
                     </td>
@@ -66,16 +66,16 @@ else
                     </td>
                     <td>
                         <input class="form-control" type="number"
-                               placeholder="Price €" style="width:100px"
-                               @bind="@objCourse.Price" />
+                        placeholder="Price €" style="width:100px"
+                        @bind="@objCourse.Price" />
                     </td>
                     <td>
                         <button class="btn btn-primary"
-                                @onclick="(() => Save(objCourse.Id,objCourse))">
+                        @onclick="(() => Save(objCourse.Id,objCourse))">
                             Save
                         </button>
                         <button class="btn btn-primary"
-                                @onclick="(() => ShowCandidates(objCourse))">
+                        @onclick="(() => ShowCandidates(objCourse))">
                             Show
                         </button>
                     </td>
@@ -92,11 +92,11 @@ else
                     <td>@course.Price</td>
                     <td>
                         <button class="btn btn-primary"
-                                @onclick="(() => Edit(course))">
+                        @onclick="(() => Edit(course))">
                             Edit
                         </button>
                         <button class="btn btn-danger"
-                                @onclick="(() => Delete(course))">
+                        @onclick="(() => Delete(course))">
                             Delete
                         </button>
                     </td>
@@ -114,7 +114,7 @@ else
                         <h3 class="modal-title">Edit</h3>
                         <!-- Button to close the popup -->
                         <button type="button" class="close"
-                                @onclick="ClosePopup">
+                        @onclick="ClosePopup">
                             <span aria-hidden="true">X</span>
                         </button>
                     </div>
@@ -123,8 +123,8 @@ else
                         @if (ShowPopup == 1)
                         {
                             <input class="form-control" type="text"
-                                   placeholder="Name"
-                                   @bind="@objCourse.TrainingId" />
+                            placeholder="Name"
+                            @bind="@objCourse.TrainingId" />
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -146,7 +146,7 @@ else
                                             <td>
                                                 <!-- Edit the training -->
                                                 <button class="btn btn-primary"
-                                                        @onclick="(() => SelectTraining(training))">
+                                                @onclick="(() => SelectTraining(training))">
                                                     Select
                                                 </button>
                                             </td>
@@ -158,11 +158,11 @@ else
                         @if (ShowPopup == 2)
                         {
                             <input class="form-control" type="text"
-                                   placeholder="Name"
-                                   @bind="@objCourse.ClassroomId" />
+                            placeholder="Name"
+                            @bind="@objCourse.ClassroomId" />
                             <InputSelect class="form-select " @bind-Value="@objCourse.ClassroomId">
-                                <option selected>Select a Training</option>
-                                @foreach (var classroom in classrooms)
+                                <option selected>Select a Classroom</option>
+                                @foreach (var classroom in freeClassrooms)
                                 {
                                     <option value="@classroom.Id">@classroom.Name</option>
                                 }
@@ -173,6 +173,7 @@ else
             </div>
         </div>
     }
+
 }
 
 @code {
@@ -181,8 +182,9 @@ else
     private List<Training>? trainings;
     private Training objTraining = new Training();
     private List<Classroom>? classrooms;
+    private List<Classroom> freeClassrooms = new List<Classroom>();
     private int courseId;
-
+    private List<UserCourse>? userCourses;
 
     // To hold any possible errors
     string strError = "";
@@ -213,8 +215,9 @@ else
         ShowPopup = 1;
     }
 
-    private void EditClassroom()
+    private async Task EditClassroom(Course editCourse)
     {
+        freeClassrooms = await client.GetFromJsonAsync<List<Classroom>>("api/Classrooms/Free/" + editCourse.Id);
         // Open the Popup
         ShowPopup = 2;
     }

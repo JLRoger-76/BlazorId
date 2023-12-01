@@ -12,7 +12,7 @@
 }
 else
 {
-    @if (teacherCourse == null)
+    @if (HasTeacher==false)
     {
         <ul class="list-group">
             @if (freeTeachers.Count != 0)
@@ -91,13 +91,13 @@ else
     private List<UserCourse>? userCourses;
     private UserCourse objuserCourse = new UserCourse();
     private List<UserCourse>? teacherCourses;
-
     private UserCourse? teacherCourse;
+    private bool HasTeacher;
 
 
     protected override async Task OnInitializedAsync()
     {
-        teacherCourse = null;
+
         // List of students & teacher in the course
         userCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Users/" + courseId);
         //get teacher of the course
@@ -107,71 +107,13 @@ else
             foreach (var teacher in teachers)
             {
                 //create teacherCourse
-                if (teacher.UserName == usercourse.UserName) teacherCourse = usercourse;
+                if (teacher.UserName == usercourse.UserName) HasTeacher=true;
             }
         }
-        if (teacherCourse == null)
+        if( HasTeacher == false)
         {
-            editCourse = await client.GetFromJsonAsync<Course>("api/Courses/" + courseId);
-
-            freeTeachers = new List<ApplicationUser>();
-            //courses list from training
-            var trainingCourses = await client.GetFromJsonAsync<List<Course>>("api/Courses/Training/" + editCourse.TrainingId);
-            //teachers list
-            foreach (var teacher in teachers)
-            {
-                var isFree = true;
-                //notes list from teacher
-                teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
-                //add free teacher
-                foreach (var tc in teacherCourses!)
-                {
-                    if ((tc.Course.StartDate >= editCourse.StartDate &
-                         tc.Course.StartDate <= editCourse.EndDate) ||
-                        (tc.Course.EndDate >= editCourse.StartDate &
-                         tc.Course.EndDate <= editCourse.EndDate))
-                    {
-                        isFree = false;
-                    }
-                }
-                if (isFree)
-                {
-                    //notes list from teacher
-                    teacherCourses = await client.GetFromJsonAsync<List<UserCourse>>("api/UserCourses/Courses/" + teacher.UserName);
-                    // select notes only for defined courses
-                    teacher.Appreciation = 0;
-
-                    foreach (Course course in trainingCourses)
-                    {
-                        var count = 0.00;
-                        foreach (var tc in teacherCourses!)
-                        {
-                            if (tc.CourseId == course.Id)
-                            {
-                                if (tc.TeacherAnimation > 0) count++;
-                                if (tc.TeacherAnswers > 0) count++;
-                                if (tc.TeacherAvailability > 0) count++;
-                                if (tc.TeacherExpertise > 0) count++;
-                                if (tc.TeacherPedagogy > 0) count++;
-                                // sum of notes for the teacher
-                                teacher.Appreciation += (
-                                (tc.TeacherAnimation) +
-                                (tc.TeacherAnswers) +
-                                (tc.TeacherAvailability) +
-                                (tc.TeacherExpertise) +
-                                (tc.TeacherPedagogy)) / count;
-                            }
-                        }
-                    }
-                    freeTeachers.Add(teacher);
-                }
-            }
-            // Sort the best teachers based on Appreciation in descending order
-            freeTeachers = freeTeachers
-                .OrderByDescending(course => course.Appreciation)
-                .Take(5)
-                .ToList();
-        }
+            freeTeachers = await client.GetFromJsonAsync<List<ApplicationUser>>("api/UserCourses/Teachers/" + courseId);
+        }      
     }
 
     private async Task AddTeacher(string name)
