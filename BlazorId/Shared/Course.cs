@@ -14,6 +14,11 @@ namespace BlazorId.Shared
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyy}")]
         public DateTime EndDate { get; set; }
         [Column(TypeName = "decimal(18, 2)")]
+        public bool Computer {  get; set; }
+        public bool Material { get; set; }
+        public bool Convocation {  get; set; }
+        public bool MealTicket { get; set; }
+
         public decimal Price { get; set; }
         // Navigation property
         public Training? Training { get; set; }
