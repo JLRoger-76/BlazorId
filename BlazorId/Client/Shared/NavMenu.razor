@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">BlazorId</a>
+        <a class="navbar-brand" href="">ITTraining</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -39,36 +39,27 @@
                     <NavLink class="nav-link" href="courses">
                         <span class="oi oi-list-rich" aria-hidden="true"></span> Courses
                     </NavLink>
-                </div>            
+                </div>
             </AuthorizeView>
-             <AuthorizeView Roles="Teacher">
+            <AuthorizeView Roles="Teacher">
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="dailyAttendances">
                         <span class="oi oi-list-rich" aria-hidden="true"></span> Attendances
                     </NavLink>
                 </div>
-             </AuthorizeView>
+            </AuthorizeView>
 
-            <AuthorizeView>
-                <Authorized>                   
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="notations">
-                            <span class="oi oi-list-rich" aria-hidden="true"></span> Notations
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="claims">
-                            <span class="oi oi-list-rich" aria-hidden="true"></span> Claims
-                        </NavLink>
-                    </div>
-                </Authorized>
-                <NotAuthorized>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="trainings">
-                            <span class="oi oi-list-rich" aria-hidden="true"></span> Trainings
-                        </NavLink>
-                    </div>                   
-                </NotAuthorized>
+            <AuthorizeView Roles="Student">
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="notations">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Notations
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="claims">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Claims
+                    </NavLink>
+                </div>
             </AuthorizeView>
         </nav>
     </div>

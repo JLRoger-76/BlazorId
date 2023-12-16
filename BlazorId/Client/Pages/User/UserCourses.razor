@@ -48,6 +48,20 @@ else
         objuserCourse.CourseId = Int32.Parse(courseId);
         objuserCourse.UserName = userName;
         await client.PostAsJsonAsync("api/UserCourses", objuserCourse);
+
+        //get the user
+        var  objUser = await client.GetFromJsonAsync<ApplicationUser>("api/users/" + userName);
+        var userId = objUser.Id;
+        // Handle Roles
+        var userRoles = await client.GetFromJsonAsync<List<string>>($"api/UserRole?userId={userId}");
+        // Remove roles of user
+        foreach (String userRole in userRoles)
+        {
+            await client.DeleteAsync($"api/UserRole?userId={userId}&roleName={userRole}");
+        }
+        //Set Student role
+        await client.PostAsync($"api/UserRole?userId={userId}&roleName=Student", null);
+       
         NavigationManager.NavigateTo("");
 
     }

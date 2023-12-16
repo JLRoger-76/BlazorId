@@ -30,7 +30,7 @@ namespace BlazorId.Server.Controllers
           {
               return NotFound();
           }
-            return await _context.Classrooms.ToListAsync();
+            return await _context.Classrooms.Include(c=>c.User).ToListAsync();
         }
 
         // GET: api/Classrooms/5

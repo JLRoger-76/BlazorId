@@ -20,22 +20,45 @@ namespace BlazorId.Server.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoryTraining>>> GetCategoryTrainings()
         {
-          if (_context.CategoryTrainings == null)
-          {
-              return NotFound();
-          }
+            if (_context.CategoryTrainings == null)
+            {
+                return NotFound();
+            }
             return await _context.CategoryTrainings.ToListAsync();
         }
 
-        // GET: api/CategoryTrainings/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<IEnumerable<CategoryTraining>>> GetCategoryTraining(int id)
+        // GET: api/CategoryTrainings/Category
+        [HttpGet("Category/{id}")]
+        public async Task<ActionResult<IEnumerable<CategoryTraining>>> GetCategoryTrainings(int id)
         {
-          if (_context.CategoryTrainings == null)
-          {
-              return NotFound();
-          }
-            return await _context.CategoryTrainings.Include(trai=>trai.Training).Where(cat=>cat.CategoryId==id).ToListAsync();           
+            if (_context.CategoryTrainings == null)
+            {
+                return NotFound();
+            }
+            return await _context.CategoryTrainings.
+                Where(ct => ct.CategoryId == id).
+                ToListAsync();
+        }
+
+
+        // GET: api/CategoryTrainings/Params? &id= &p= &pp= &k=
+        //p=  current page
+        //pp= items per page
+        //k=  search term
+        [HttpGet("{Params}")]
+        public async Task<ActionResult<IEnumerable<CategoryTraining>>> 
+            GetCategoryTrainingSelected(int id,int p=0,int pp=10, string k = "")
+        {
+            if (_context.CategoryTrainings == null)
+            {
+                return NotFound();
+            }
+            return await _context.CategoryTrainings.
+                Include(ct => ct.Training).
+                Where(ct => ct.CategoryId == id).
+                Where(ct => ct.Training!.Name!.Contains(k)).
+                Skip(p*pp).Take(pp).
+                ToListAsync();
         }
 
         // PUT: api/CategoryTrainings/5
@@ -74,10 +97,10 @@ namespace BlazorId.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<CategoryTraining>> PostCategoryTraining(CategoryTraining categoryTraining)
         {
-          if (_context.CategoryTrainings == null)
-          {
-              return Problem("Entity set 'ApplicationDbContext.CategoryTrainings'  is null.");
-          }
+            if (_context.CategoryTrainings == null)
+            {
+                return Problem("Entity set 'ApplicationDbContext.CategoryTrainings'  is null.");
+            }
             _context.CategoryTrainings.Add(categoryTraining);
             await _context.SaveChangesAsync();
 

@@ -1,9 +1,206 @@
 ﻿@page "/"
+@using BlazorId.Shared;
+@inject NavigationManager NavigationManager
 
 <PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>ITTraining,</h1>
+<h3>Discover our trainings for your needs</h3>
+<p>
+    Notre offre de formations en informatique est étudiée pour répondre aux besoins les plus variés : des grands standards aux technologies les plus pointues, des séminaires état de l’art aux cursus métier organisés sur plusieurs semaines, nous vous proposons près de 1 150 programmes dédiés à l’acquisition rapide de nouveaux savoirs.
 
-Welcome to your new app.
+    Au-delà de nos offres dédiées aux technologies, aux méthodes et aux métiers de l’informatique, nous proposons également des solutions de formation sur les champs du Management, de l’Efficacité professionnelle et du Développement personnel.
+</p>
+@if (categories == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    @if (IdParent > 0)
+    {
+        <button class="btn btn-success"
+                @onclick="(() => ShowParent(IdParent))">
+            Back
+        </button>
+    }
+    @if (showTrainings == false)
+    {
+        <div class="row">
+            @foreach (var category in categories)
+            {
+                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p> @category.Name</p>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+                            @if (category.ExistChildren)
+                            {
+                                <button class="btn btn-success"
+                                        @onclick="(() => ShowChildren(category.Id))">
+                                    Sub-categories
+                                </button>
+                            }
+                            @if (category.IsLinked)
+                            {
+                                <button class="btn btn-success"
+                                        @onclick="(() => ShowTrainings(category.Id))">
+                                    Trainings
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        @if (!showDetail)
+        {
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="input-group rounded">
+                        <input type="search" @bind-value="@searchTerm" class="form-control rounded" placeholder="Search" aria-label="Search" aria-describedby="search-addon" />
+                        <span class="input-group-text border-0" id="search-addon">
+                            <span class="oi oi-magnifying-glass" aria-hidden="true" @onclick="(() => ShowTrainings(categoryId))"></span>
+                        </span>
+                    </li>
+                    @for (int i = Math.Max(1, currentPage - 5); i <= Math.Min(currentPage + 5, trainingCount / perPage); i++)
+                    {
+                        var page = i;
+                        <li class="page-item"><a class="page-link" @onclick="(() => PageClick(page))">@i</a></li>
+                    }
+                </ul>
+            </nav>
+            <div class="row">
+                @foreach (var ct in categoryTrainings)
+                {
+                    <div class="col-sm-12 col-md-6 col-lg-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p>@ct.Training!.Name</p>
+                                <p>@ct.Training.Duration days</p>
+                                <p>@ct.Training.Price euros</p>
+                                <button class="btn btn-success"
+                                        @onclick="(() => ShowDetail(!showDetail, ct.Training))">
+                                    Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="white-space: pre-line">@selectedTraining!.Detail</p>
+            @if (courses != null)
+            {
+                <div class="row">
+                    @foreach (Course course in courses!)
+                    {
+                        <div class="col-sm-12 col-md-6 col-lg-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p>Begin: @course.StartDate.ToShortDateString()</p>
+                                    <p>End: @course.EndDate.ToShortDateString()</p>
+                                    <p>
+                                        City: @course.Classroom!.User!.ZipCode
+                                        @course.Classroom.User.City
+                                    </p>
+                                    <button class="btn btn-success"
+                                            @onclick="(() => Select(course.Id))">
+                                        Select
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    }
+}
+
+@code {
+    [Inject]
+    private IHttpAnonymousClientFactory client { get; set; }
+    private List<Category>? categories;
+    private List<CategoryTraining>? categoryTrainings;
+    private List<Course>? courses;
+    private int IdParent = 0;
+    private bool showTrainings;
+    private bool showDetail;
+    //current category
+    private int categoryId;
+    //current training
+    private Training selectedTraining;
+    //pagination variables
+    private string searchTerm = "";
+    private int trainingCount;
+    private int currentPage;
+    // show 10 trainings per page
+    private int perPage = 10;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await client.HttpClient.GetFromJsonAsync<List<Category>>("api/Categories/Parent/" + IdParent);
+        foreach (Category category in categories!)
+        {
+            // exist sub-category
+            var children = await client.HttpClient.GetFromJsonAsync<List<Category>>("api/Categories/Parent/" + category.Id);
+            category.ExistChildren = (children!.Count() != 0);
+            // exist links category - training
+            categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>($"api/CategoryTrainings/Params?id={category.Id}");
+            category.IsLinked = (categoryTrainings!.Count != 0);
+        }
+    }
+
+    async Task ShowParent(int id)
+    {
+        var category = await client.HttpClient.GetFromJsonAsync<Category>("api/Categories/" + id);
+        IdParent = category!.ParentId;
+        showTrainings = false;
+        await OnInitializedAsync();
+    }
+
+    async Task ShowChildren(int id)
+    {
+        IdParent = id;
+        await OnInitializedAsync();
+    }
+
+    async Task ShowTrainings(int id)
+    {
+        IdParent = id;
+        categoryId = id;
+        // links from category.id
+        categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/Category/" + categoryId);
+        // total trainings for pagination
+        trainingCount = categoryTrainings.Count();
+        // show first page
+        categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>
+        ($"api/CategoryTrainings/Params?id={categoryId}&p=0&pp={perPage}&k={searchTerm}");
+        showTrainings = true;
+    }
+
+    async Task PageClick(int page)
+    {
+        currentPage = page;
+        categoryTrainings = await client.HttpClient.GetFromJsonAsync<List<CategoryTraining>>
+        ($"api/CategoryTrainings/Params?id={categoryId}&p={page - 1}&pp={perPage}&k={searchTerm}");
+    }
+
+    private async Task ShowDetail(bool show, Training training)
+    {
+        selectedTraining = training;
+        courses = await client.HttpClient.GetFromJsonAsync<List<Course>>("api/Courses/Training/" + training.Id);
+        showDetail = show;
+    }
+    private void Select(int courseid)
+    {
+        NavigationManager.NavigateTo("userCourses/" + courseid);
+    }
+}

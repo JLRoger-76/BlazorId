@@ -73,9 +73,9 @@ else
                         <input class="form-control" type="number"
                                placeholder="Duration"
                         @bind="@objTraining.Duration" />
-                        <input class="form-control" type="text"
-                               placeholder="Detail"
-                        @bind="@objTraining.Detail" />
+                        <textarea class="form-control" @bind="@objTraining.Detail"
+                                  placeholder="Detail" rows="5">
+                        </textarea>
                         <div class="list-group">
                             @foreach (var category in categories)
                             {
@@ -100,9 +100,7 @@ else
 @code {
     private List<Training>? trainings;
     private Training objTraining = new Training();
-
     private List<Category>? categories;
-
     private List<CategoryTraining>? categoryTrainings;
     private CategoryTraining objCategoryTraining = new CategoryTraining();
 
@@ -115,7 +113,7 @@ else
     {
         trainings = await client.GetFromJsonAsync<List<Training>>("api/Trainings");
         categories = await client.GetFromJsonAsync<List<Category>>("api/Categories");
-
+        objTraining = new Training();
     }
 
     private async Task EditTraining(Training training)
@@ -124,7 +122,7 @@ else
         {
             //init current category
             category.IsLinked = false;
-            categoryTrainings = await client.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + category.Id);
+            categoryTrainings = await client.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/Category/" + category.Id);
             foreach (var categoryTraining in categoryTrainings)
             {
                 //if exist category associated to training
@@ -143,7 +141,7 @@ else
     {
         foreach (Category category in categories)
         {
-            categoryTrainings = await client.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/" + category.Id);
+            categoryTrainings = await client.GetFromJsonAsync<List<CategoryTraining>>("api/CategoryTrainings/Category/"+category.Id);
             bool isLinked = false;
             foreach (var categoryTraining in categoryTrainings)
             {   //if exist category associated to training but unchecked

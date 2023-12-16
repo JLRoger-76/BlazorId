@@ -41,14 +41,14 @@ else
                         @objCourse.Id
                     </td>
                     <td>
-                        @objCourse.TrainingId
+                        @objCourse.Training.Name
                         <button class="btn btn-primary"
                                 @onclick="(() => EditTraining())">
                             Edit
                         </button>
                     </td>
                     <td>
-                        @objCourse.ClassroomId
+                        @objCourse.Classroom.Name
                         <button class="btn btn-primary"
                                 @onclick="(() => EditClassroom(objCourse))">
                             Edit
@@ -56,7 +56,8 @@ else
                     </td>
                     <td>
                         <div class="form-control">
-                            <InputDate @bind-Value="objCourse.StartDate" />
+                            <InputDate @bind-Value="objCourse.StartDate"
+                                 @oninput="@SetEndDate" />
                         </div>
                     </td>
                     <td>
@@ -159,7 +160,7 @@ else
                         {
                             <input class="form-control" type="text"
                                    placeholder="Name"
-                                   @bind="@objCourse.ClassroomId" />
+                                   @bind="@objCourse.Classroom.Name" />
                             <InputSelect class="form-select " @bind-Value="@objCourse.ClassroomId">
                                 <option selected>Select a Classroom</option>
                                 @foreach (var classroom in freeClassrooms)
@@ -234,6 +235,7 @@ else
         trainings = await client.GetFromJsonAsync<List<Training>>("api/Trainings");
         classrooms = await client.GetFromJsonAsync<List<Classroom>>("api/Classrooms");
         objCourse = new Course();
+        holidays = await client.GetFromJsonAsync<List<Holiday>>("api/Holiday/" + DateTime.Now.Year);
     }
 
     private void Edit(Course course)
@@ -257,13 +259,16 @@ else
     }
 
     private async Task SelectTraining(Training training)
-    {
-        int year = DateTime.Now.Year;
-        holidays = await client.GetFromJsonAsync<List<Holiday>>("api/Holiday/" + year);
+    {      
         objCourse.TrainingId = training.Id;
         objCourse.Price = training.Price;
         objCourse.EndDate = CalculateEndDate(objCourse.StartDate, training.Duration, holidays);
         ClosePopup();
+    }
+
+    private async Task SetEndDate(ChangeEventArgs e)
+    {
+        objCourse.EndDate = CalculateEndDate(Convert.ToDateTime(e.Value), objCourse.Training.Duration, holidays);
     }
 
     static DateTime CalculateEndDate(DateTime startDate, int workingDays, List<Holiday> holidays)
