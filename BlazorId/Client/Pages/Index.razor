@@ -83,8 +83,12 @@ else
                                 <p>@ct.Training.Duration days</p>
                                 <p>@ct.Training.Price euros</p>
                                 <button class="btn btn-success"
-                                        @onclick="(() => ShowDetail(!showDetail, ct.Training))">
-                                    Details
+                                        @onclick="(() => ShowDetail(!showDetail, ct.Training,true))">
+                                   Inter
+                                </button>
+                                <button class="btn btn-success"
+                                        @onclick="(() => ShowDetail(!showDetail, ct.Training,false))">
+                                   Intra
                                 </button>
                             </div>
                         </div>
@@ -95,10 +99,10 @@ else
         else
         {
             <p style="white-space: pre-line">@selectedTraining!.Detail</p>
-            @if (courses != null)
+            @if (selectedCourses != null)
             {
                 <div class="row">
-                    @foreach (Course course in courses!)
+                    @foreach (Course course in selectedCourses)
                     {
                         <div class="col-sm-12 col-md-6 col-lg-4">
                             <div class="card bg-light">
@@ -129,6 +133,7 @@ else
     private List<Category>? categories;
     private List<CategoryTraining>? categoryTrainings;
     private List<Course>? courses;
+    private List<Course>? selectedCourses = new();
     private int IdParent = 0;
     private bool showTrainings;
     private bool showDetail;
@@ -136,6 +141,7 @@ else
     private int categoryId;
     //current training
     private Training selectedTraining;
+
     //pagination variables
     private string searchTerm = "";
     private int trainingCount;
@@ -160,6 +166,7 @@ else
 
     async Task ShowParent(int id)
     {
+        showDetail = false;
         var category = await client.HttpClient.GetFromJsonAsync<Category>("api/Categories/" + id);
         IdParent = category!.ParentId;
         showTrainings = false;
@@ -193,10 +200,31 @@ else
         ($"api/CategoryTrainings/Params?id={categoryId}&p={page - 1}&pp={perPage}&k={searchTerm}");
     }
 
-    private async Task ShowDetail(bool show, Training training)
+    private async Task ShowDetail(bool show, Training training,bool inter)
     {
+        selectedCourses = new();
         selectedTraining = training;
         courses = await client.HttpClient.GetFromJsonAsync<List<Course>>("api/Courses/Training/" + training.Id);
+        //select courses in training company, not intra enterprise
+        foreach (Course course in courses)
+        {
+            var userRoles = await client.HttpClient.GetFromJsonAsync<List<string>>($"api/UserRole?userId={course.Classroom.UserId}");
+            if (inter)
+            {
+                if (userRoles.Contains("Company"))
+                {
+                    selectedCourses.Add(course);
+                }
+            }
+            else
+            {
+                if (userRoles.Contains("Enterprise"))
+                {
+                    selectedCourses.Add(course);
+                }
+            }
+           
+        }
         showDetail = show;
     }
     private void Select(int courseid)
