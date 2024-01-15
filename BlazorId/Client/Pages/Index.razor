@@ -3,14 +3,19 @@
 @inject NavigationManager NavigationManager
 
 <PageTitle>Index</PageTitle>
+<div class="p-5 rounded-lg m-3 container">
+    <div class="picture"></div>
+    <h1 class="display-4">ITTraining</h1>
+    <p class="lead">Discover our trainings for your needs.</p>
+    <p>
+        Notre offre de formations en informatique est étudiée pour répondre aux besoins les plus variés : des grands standards aux technologies les plus pointues, des séminaires état de l’art aux cursus métier organisés sur plusieurs semaines, nous vous proposons près de 1 150 programmes dédiés à l’acquisition rapide de nouveaux savoirs.
 
-<h1>ITTraining,</h1>
-<h3>Discover our trainings for your needs</h3>
-<p>
-    Notre offre de formations en informatique est étudiée pour répondre aux besoins les plus variés : des grands standards aux technologies les plus pointues, des séminaires état de l’art aux cursus métier organisés sur plusieurs semaines, nous vous proposons près de 1 150 programmes dédiés à l’acquisition rapide de nouveaux savoirs.
+        Au-delà de nos offres dédiées aux technologies, aux méthodes et aux métiers de l’informatique, nous proposons également des solutions de formation sur les champs du Management, de l’Efficacité professionnelle et du Développement personnel.
+    </p>
+</div>
 
-    Au-delà de nos offres dédiées aux technologies, aux méthodes et aux métiers de l’informatique, nous proposons également des solutions de formation sur les champs du Management, de l’Efficacité professionnelle et du Développement personnel.
-</p>
+
+
 @if (categories == null)
 {
     <p><em>Chargement...</em></p>
@@ -84,11 +89,11 @@ else
                                 <p>@ct.Training.Price euros</p>
                                 <button class="btn btn-success"
                                         @onclick="(() => ShowDetail(!showDetail, ct.Training,true))">
-                                   Inter
+                                    Inter
                                 </button>
                                 <button class="btn btn-success"
                                         @onclick="(() => ShowDetail(!showDetail, ct.Training,false))">
-                                   Intra
+                                    Intra
                                 </button>
                             </div>
                         </div>
@@ -98,7 +103,18 @@ else
         }
         else
         {
-            <p style="white-space: pre-line">@selectedTraining!.Detail</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <p style="white-space: pre-line">@selectedTraining!.Detail</p>
+                </div>
+                <div class="col-md-6">
+                    <div>
+                        <img style="width: 100%; height: auto; object-fit: cover;" src="/pictures/training.jpg" />
+                    </div>
+                </div>
+            </div>
+
+
             @if (selectedCourses != null)
             {
                 <div class="row">
@@ -200,7 +216,7 @@ else
         ($"api/CategoryTrainings/Params?id={categoryId}&p={page - 1}&pp={perPage}&k={searchTerm}");
     }
 
-    private async Task ShowDetail(bool show, Training training,bool inter)
+    private async Task ShowDetail(bool show, Training training, bool inter)
     {
         selectedCourses = new();
         selectedTraining = training;
@@ -223,7 +239,7 @@ else
                     selectedCourses.Add(course);
                 }
             }
-           
+
         }
         showDetail = show;
     }
